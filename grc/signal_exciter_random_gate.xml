@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<block>
+  <name>Random Gate</name>
+  <key>signal_exciter_random_gate</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter</import>
+  <make>signal_exciter.random_gate($samp_rate, $min_off_dur, $max_off_dur, $min_on_dur, $max_on_dur, $seed)</make>
+
+  <param>
+    <name>Sample Rate</name>
+    <key>samp_rate</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Min Off Duration</name>
+    <key>min_off_dur</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Max Off Duration</name>
+    <key>max_off_dur</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Min On Duration</name>
+    <key>min_on_dur</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Max On Duration</name>
+    <key>max_on_dur</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Seed</name>
+    <key>seed</key>
+    <value>-1</value>
+    <type>int</type>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>complex</type>
+  </source>
+</block>

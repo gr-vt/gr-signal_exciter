@@ -1,0 +1,143 @@
+<?xml version="1.0"?>
+<block>
+  <name>CPM Hier</name>
+  <key>signal_exciter_cpm_hier</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter
+from gnuradio import analog
+from math import pi</import>
+  <make>None
+sig_params = signal_exciter.sig_params()
+sig_params.type                     = $mtype
+sig_params.sps                      = $sps
+#if $mtype() in ('signal_exciter.FSK', 'signal_exciter.CPM', 'signal_exciter.GFSK')
+sig_params.cpm_params.fm_sense      = $sense
+#end if
+#if $mtype() in ('signal_exciter.CPM', 'signal_exciter.GMSK', 'signal_exciter.GFSK')
+sig_params.cpm_params.L             = $L
+sig_params.cpm_params.beta          = $beta
+#end if
+#if $mtype() in ('signal_exciter.CPM')
+sig_params.cpm_params.phase_type    = $ptype
+#end if
+self.$id = signal_exciter.cpm_hier(sig_params, $seed)
+</make>
+
+
+  <param>
+    <name>Signal Type</name>
+    <key>mtype</key>
+    <value>signal_exciter.MSK</value>
+    <type>enum</type>
+    <option>
+      <name>MSK</name>
+      <key>signal_exciter.MSK</key>
+    </option>
+    <option>
+      <name>GMSK</name>
+      <key>signal_exciter.GMSK</key>
+    </option>
+    <option>
+      <name>GFSK</name>
+      <key>signal_exciter.GFSK</key>
+    </option>
+    <option>
+      <name>FSK</name>
+      <key>signal_exciter.FSK</key>
+    </option>
+    <option>
+      <name>CPM</name>
+      <key>signal_exciter.CPM</key>
+    </option>
+  </param>
+  <param>
+    <name>CPM Type</name>
+    <key>ptype</key>
+    <value>analog.cpm.LREC</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>LREC</name>
+      <key>analog.cpm.LREC</key>
+    </option>
+    <option>
+      <name>LRC</name>
+      <key>analog.cpm.LRC</key>
+    </option>
+    <option>
+      <name>LSRC</name>
+      <key>analog.cpm.LSRC</key>
+    </option>
+    <option>
+      <name>Gaussian</name>
+      <key>analog.cpm.Gaussian</key>
+    </option>
+    <option>
+      <name>Tamed FM</name>
+      <key>analog.cpm.TFM</key>
+    </option>
+  </param>
+  <param>
+    <name>Samples/Symbol</name>
+    <key>sps</key>
+    <value>2</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>Sensitivity</name>
+    <key>sense</key>
+    <value>pi/2.</value>
+    <type>real</type>
+    <hide>
+#if $mtype() in ('signal_exciter.FSK', 'signal_exciter.CPM', 'signal_exciter.GFSK')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Pulse Duration (Symbols)</name>
+    <key>L</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM', 'signal_exciter.GMSK', 'signal_exciter.GFSK')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Beta</name>
+    <key>beta</key>
+    <value>0.35</value>
+    <type>real</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM', 'signal_exciter.GMSK', 'signal_exciter.GFSK')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Seed</name>
+    <key>seed</key>
+    <value>-1</value>
+    <type>int</type>
+  </param>
+
+
+  <source>
+    <name>out</name>
+    <type>complex</type>
+  </source>
+</block>
