@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<block>
+  <name>gmm</name>
+  <key>signal_exciter_gmm</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter</import>
+  <make>signal_exciter.gmm($sigma1, $sigma2, $fmax, $thresh, $seed)</make>
+
+  <param>
+    <name>Sigma 1</name>
+    <key>sigma1</key>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Sigma 2</name>
+    <key>sigma2</key>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Max Frequency BW (0,1)</name>
+    <key>fmax</key>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Mixture Threshold</name>
+    <key>thresh</key>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Seed</name>
+    <key>seed</key>
+    <value>-1</value>
+    <type>int</type>
+  </param>
+
+  <source>
+    <name>out</name>
+    <type>float</type>
+  </source>
+</block>

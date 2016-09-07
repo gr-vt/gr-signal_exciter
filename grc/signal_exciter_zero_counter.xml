@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<block>
+  <name>Zero Counter</name>
+  <key>signal_exciter_zero_counter</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter</import>
+  <make>signal_exciter.zero_counter($(type.fcn))</make>
+
+  <param>
+    <name>ItemType</name>
+    <key>type</key>
+    <type>enum</type>
+		<option>
+			<name>Complex</name>
+			<key>complex</key>
+			<opt>fcn:8</opt>
+		</option>
+		<option>
+			<name>Float</name>
+			<key>float</key>
+			<opt>fcn:4</opt>
+		</option>
+	</param>
+
+	<sink>
+		<name>in</name>
+		<type>$type</type>
+	</sink>
+</block>

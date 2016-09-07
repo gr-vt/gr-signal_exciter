@@ -1,0 +1,579 @@
+<?xml version="1.0"?>
+<block>
+  <name>Random Signal</name>
+  <key>signal_exciter_random_signal</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter
+from gnuradio.analog import cpm</import>
+	<make>None
+sig_params = signal_exciter.sig_params()
+sig_params.type             = $mtype
+#if $mtype() in ('signal_exciter.OFDM',)
+sig_params.mod              = $mod
+#end if
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+sig_params.order            = $order
+sig_params.offset           = $offset
+#end if
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+sig_params.sps              = $sps
+sig_params.pulse_len        = $pulse_len
+
+#set $psid = '_%s_pulse_shape'%$id
+#set $temp = '_%s_temp'%$id
+$psid = signal_exciter.FloatVector(sig_params.pulse_len)
+$temp = $pulse_shape
+#raw
+for ii in range(#end raw $pulse_len#raw):#end raw
+  $psid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.pulse_shape      = $psid
+
+#end if
+#if $mtype() in ('signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+sig_params.sps              = $sps
+#end if
+#if $mtype() in ('signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+sig_params.order            = $order
+sig_params.mod_idx          = $mod_idx
+#end if
+#if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+sig_params.L                = $overlap
+sig_params.beta             = $beta
+#end if
+#if $mtype() in ('signal_exciter.CPM')
+sig_params.phase_type    = $ptype
+#end if
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+sig_params.mod_idx          = $mod_idx
+sig_params.f_max            = $fmax
+sig_params.var1             = $var1
+sig_params.var2             = $var2
+sig_params.thresh           = $thresh
+sig_params.am_norm          = False
+#end if
+#if $mtype() in ('signal_exciter.OFDM',)
+sig_params.fftsize          = $fftsize
+sig_params.cp_len           = $cp_len
+sig_params.active_carriers  = $act_car
+sig_params.syms_per_frame   = $spf
+sig_params.pilot_per_frame  = $ppf
+sig_params.pilot_count      = $pilot_count
+
+#set $plid = '_%s_pilot_loc'%$id
+#set $temp = '_%s_temp'%$id
+$plid = signal_exciter.SizeVector(sig_params.pilot_count)
+$temp = $pilot_loc
+#raw
+for ii in range(#end raw $pilot_count#raw):#end raw
+  $plid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.pilot_locations  = $plid
+
+sig_params.backoff          = $backoff
+sig_params.add_sync         = $add_sync
+#end if
+#if $mtype() in ('signal_exciter.CWMORSE',)
+sig_params.base_word        = bool($base_word)
+sig_params.char_per_word    = int($cpw)
+sig_params.words_per_minute = float($wpm)
+#end if
+self.$id = signal_exciter.random_signal(sig_params, $seed)
+</make>
+<!--pulse_shape_($id) = signal_exciter.floatArray($pulse_len)
+for ii in range($pulse_len):
+  pulse_shape_($id)[ii] = $pulse_shape[ii]
+sig_params.pulse_shape      = pulse_shape_($id)-->
+<!--pilot_loc_($id) = signal_exciter.size_tArray($pilot_count)
+for ii in range($pilot_count):
+  pilot_loc_($id)[ii] = $pilot_loc[ii]
+sig_params.pilot_locations  = pilot_loc_($id)-->
+
+
+
+  <param>
+    <name>Signal Type</name>
+    <key>mtype</key>
+    <value>signal_exciter.DSB</value>
+    <type>enum</type>
+    <option>
+      <name>CWMORSE</name>
+      <key>signal_exciter.CWMORSE</key>
+    </option>
+    <option>
+      <name>DSB</name>
+      <key>signal_exciter.DSB</key>
+    </option>
+    <option>
+      <name>DSBSC</name>
+      <key>signal_exciter.DSBSC</key>
+    </option>
+    <option>
+      <name>USB</name>
+      <key>signal_exciter.USB</key>
+    </option>
+    <option>
+      <name>LSB</name>
+      <key>signal_exciter.LSB</key>
+    </option>
+    <option>
+      <name>FM</name>
+      <key>signal_exciter.FM</key>
+    </option>
+    <option>
+      <name>PSK</name>
+      <key>signal_exciter.PSK</key>
+    </option>
+    <option>
+      <name>QAM</name>
+      <key>signal_exciter.QAM</key>
+    </option>
+    <option>
+      <name>PAM</name>
+      <key>signal_exciter.PAM</key>
+    </option>
+    <option>
+      <name>ASK</name>
+      <key>signal_exciter.ASK</key>
+    </option>
+    <option>
+      <name>MSK</name>
+      <key>signal_exciter.MSK</key>
+    </option>
+    <option>
+      <name>GMSK</name>
+      <key>signal_exciter.GMSK</key>
+    </option>
+    <option>
+      <name>FSK</name>
+      <key>signal_exciter.FSK</key>
+    </option>
+    <option>
+      <name>GFSK</name>
+      <key>signal_exciter.GFSK</key>
+    </option>
+    <option>
+      <name>CPM</name>
+      <key>signal_exciter.CPM</key>
+    </option>
+    <option>
+      <name>OFDM</name>
+      <key>signal_exciter.OFDM</key>
+    </option>
+  </param>
+  <param>
+    <name>Signal Modulation</name>
+    <key>mod</key>
+    <value>signal_exciter.PSK</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>PSK</name>
+      <key>signal_exciter.PSK</key>
+    </option>
+    <option>
+      <name>QAM</name>
+      <key>signal_exciter.QAM</key>
+    </option>
+    <option>
+      <name>PAM</name>
+      <key>signal_exciter.PAM</key>
+    </option>
+    <option>
+      <name>ASK</name>
+      <key>signal_exciter.ASK</key>
+    </option>
+  </param>
+  <param>
+    <name>Signal Order</name>
+    <key>order</key>
+    <value>2</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Signal Offset</name>
+    <key>offset</key>
+    <value>0.0</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Samples Per Symbol</name>
+    <key>sps</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Pulse Shape</name>
+    <key>pulse_shape</key>
+    <value>[1]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Pulse Shape Length</name>
+    <key>pulse_len</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Modulation Index</name>
+    <key>mod_idx</key>
+    <value>0.75</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>F max</name>
+    <key>fmax</key>
+    <value>0.26</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Var1</name>
+    <key>var1</key>
+    <value>0.005</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Var2</name>
+    <key>var2</key>
+    <value>0.07</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Thresh</name>
+    <key>thresh</key>
+    <value>0.4</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>FFT Size</name>
+    <key>fftsize</key>
+    <value>16</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>CP Length</name>
+    <key>cp_len</key>
+    <value>3</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Active Carriers</name>
+    <key>act_car</key>
+    <value>13</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Symbols Per Frame</name>
+    <key>spf</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Pilot Per Frame?</name>
+    <key>ppf</key>
+    <value>False</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Pilot Count</name>
+    <key>pilot_count</key>
+    <value>4</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Pilot Locations</name>
+    <key>pilot_loc</key>
+    <value>[0, 4, 8, 12]</value>
+    <type>int_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Backoff</name>
+    <key>backoff</key>
+    <value>10.97</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Add Sync?</name>
+    <key>add_sync</key>
+    <value>False</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Characters Per Word</name>
+    <key>cpw</key>
+    <value>5</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CWMORSE',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Words Per Minute</name>
+    <key>wpm</key>
+    <value>20</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CWMORSE',)
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Base Word</name>
+    <key>base_word</key>
+    <value>False</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CWMORSE',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>PARIS</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>CODEX</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
+    <name>Overlapping Symbols</name>
+    <key>overlap</key>
+    <value>4</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Phase Shape Parameter</name>
+    <key>beta</key>
+    <value>0.35</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>CPM Type</name>
+    <key>ptype</key>
+    <value>cpm.LREC</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM',)
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>LREC</name>
+      <key>cpm.LREC</key>
+    </option>
+    <option>
+      <name>LRC</name>
+      <key>cpm.LRC</key>
+    </option>
+    <option>
+      <name>LSRC</name>
+      <key>cpm.LSRC</key>
+    </option>
+    <option>
+      <name>Gaussian</name>
+      <key>cpm.GAUSSIAN</key>
+    </option>
+    <option>
+      <name>Tamed FM</name>
+      <key>cpm.TFM</key>
+    </option>
+  </param>
+  <param>
+    <name>Seed</name>
+    <key>seed</key>
+    <value>-1</value>
+    <type>int</type>
+    <hide>part</hide>
+  </param>
+
+  <!-- Make one 'source' node per output. Sub-nodes:
+       * name (an identifier for the GUI)
+       * type
+       * vlen
+       * optional (set to 1 for optional inputs) -->
+  <source>
+    <name>out</name>
+    <type>complex</type>
+  </source>
+</block>

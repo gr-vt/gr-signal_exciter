@@ -1,0 +1,30 @@
+INCLUDE(FindPkgConfig)
+PKG_CHECK_MODULES(PC_SIGNAL_EXCITER signal_exciter)
+
+FIND_PATH(
+    SIGNAL_EXCITER_INCLUDE_DIRS
+    NAMES signal_exciter/api.h
+    HINTS $ENV{SIGNAL_EXCITER_DIR}/include
+        ${PC_SIGNAL_EXCITER_INCLUDEDIR}
+    PATHS ${CMAKE_INSTALL_PREFIX}/include
+          /usr/local/include
+          /usr/include
+)
+
+FIND_LIBRARY(
+    SIGNAL_EXCITER_LIBRARIES
+    NAMES gnuradio-signal_exciter
+    HINTS $ENV{SIGNAL_EXCITER_DIR}/lib
+        ${PC_SIGNAL_EXCITER_LIBDIR}
+    PATHS ${CMAKE_INSTALL_PREFIX}/lib
+          ${CMAKE_INSTALL_PREFIX}/lib64
+          /usr/local/lib
+          /usr/local/lib64
+          /usr/lib
+          /usr/lib64
+)
+
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(SIGNAL_EXCITER DEFAULT_MSG SIGNAL_EXCITER_LIBRARIES SIGNAL_EXCITER_INCLUDE_DIRS)
+MARK_AS_ADVANCED(SIGNAL_EXCITER_LIBRARIES SIGNAL_EXCITER_INCLUDE_DIRS)
+

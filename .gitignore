@@ -1,0 +1,5 @@
+*~
+build/*
+testing/*.o
+testing/tester
+examples/*.py

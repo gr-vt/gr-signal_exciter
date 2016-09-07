@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<block>
+  <name>Periodic Gate</name>
+  <key>signal_exciter_periodic_gate</key>
+  <category>[Signal Exciter]</category>
+  <import>import signal_exciter</import>
+  <make>signal_exciter.periodic_gate($samp_rate, $off_duration, $on_duration, $period_offset)</make>
+
+  <param>
+    <name>Sample Rate</name>
+    <key>samp_rate</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Off Duration</name>
+    <key>off_duration</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>On Duration</name>
+    <key>on_duration</key>
+    <type>real</type>
+  </param>
+  <param>
+    <name>Period Offset</name>
+    <key>period_offset</key>
+    <type>real</type>
+  </param>
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>complex</type>
+  </source>
+</block>
