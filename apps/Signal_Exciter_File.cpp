@@ -1471,7 +1471,7 @@ std::vector<float> gen_synthz_taps(int channels, float samp_rate)
   }
   else if(TAP_SWITCH==1){
     float num_channels(channels);
-    taps = gr::filter::firdes::low_pass_2(num_channels/2.,2.*samp_rate,samp_rate/num_channels,2.*samp_rate/(num_channels*5.),80, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+    taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.55,0.005,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
   }
 
   return taps;
@@ -1500,7 +1500,39 @@ std::vector<float> gen_channl_taps(int channels, float samp_rate)
   }
   else if(TAP_SWITCH==1){
     float num_channels(channels);
-    taps = gr::filter::firdes::low_pass_2(num_channels/2.,2.*samp_rate,samp_rate/num_channels,2.*samp_rate/(num_channels*5.),80, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+    //taps = gr::filter::firdes::low_pass_2(num_channels/2.,2.*samp_rate,samp_rate/num_channels,2.*samp_rate/(num_channels*5.),80, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+    switch(channels){
+      case 2:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+      case 4:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+      case 8:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+      case 16:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+      case 32:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+      case 64:
+      {
+        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        break;
+      }
+    }
   }
 
   return taps;
