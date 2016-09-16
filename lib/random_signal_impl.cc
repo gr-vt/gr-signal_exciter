@@ -24,6 +24,7 @@
 
 #include <gnuradio/io_signature.h>
 #include "random_signal_impl.h"
+#include <gnuradio/filter/firdes.h>
 #include <stdio.h>
 
 namespace gr {
@@ -95,7 +96,20 @@ namespace gr {
         d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::LREC,d_params.sps,1,d_params.mod_idx,seed);
       }
       else if(mod_type == GFSK){
-        d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GAUSSIAN,d_params.sps,d_params.L,d_params.mod_idx,seed,d_params.beta);
+        std::vector<float> gt = gr::filter::firdes::gaussian(1,d_params.sps,d_params.beta,d_params.L*d_params.sps);
+        std::vector<float> rt(d_params.sps,1.);
+        std::vector<float> taps(gt.size()+rt.size()-1);
+        for(size_t idx = 0; idx < taps.size(); idx++){
+          size_t count = std::min(std::min(idx,rt.size()),gt.size());
+
+          float summer = 0.;
+          for(size_t dp = 0; dp < count; dp++){
+            if(idx-dp < gt.size())
+              summer += gt[idx-dp]*rt[dp];
+          }
+          taps[idx] = summer;
+        }
+        d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,d_params.sps,d_params.L,d_params.mod_idx,seed,d_params.beta,&taps[0],taps.size());
       }
       else if(mod_type == CPM){
         gr::analog::cpm::cpm_type ptype = gr::analog::cpm::cpm_type(d_params.phase_type);
