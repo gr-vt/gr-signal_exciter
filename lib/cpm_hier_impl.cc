@@ -51,17 +51,20 @@ namespace gr {
     {
       //printf("CPM HIER STARTING.\n");
       d_order = sig.order;
-      int order = sig.order;
-      int new_order=0;
-      while(order>0){
-        order = order>>1;
-        if(!new_order) new_order = 1;
-        else new_order = new_order*2;
+      if(d_gray){
+        int order = sig.order;
+        int new_order=0;
+        while(order>0){
+          order = order>>1;
+          if(!new_order) new_order = 1;
+          else new_order = new_order*2;
+        }
+        if((new_order != d_order) || (d_order == 0)){
+          if(new_order > 0) d_order = new_order;
+          else d_order = 2;
+        }
       }
-      if((new_order != d_order) || (d_order == 0)){
-        if(new_order > 0) d_order = new_order;
-        else d_order = 2;
-      }
+      if(d_order <= 1) d_order = 2;
 
       create_symbol_list();
 
