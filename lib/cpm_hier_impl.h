@@ -40,10 +40,13 @@ namespace gr {
     {
      private:
       gr::analog::cpm::cpm_type d_phase_type;
+      size_t d_order;
       size_t d_sym_overlap;
-      double d_sensitivity;
+      double d_mod_idx;
       double d_beta;
-      size_t d_seed;
+      //size_t d_seed;
+      bool d_gray;
+      bool d_conv;
 
       std::vector<float> d_symbols;
       std::vector<float> d_taps;
@@ -54,8 +57,10 @@ namespace gr {
       gr::blocks::packed_to_unpacked_bb::sptr d_upk;
       gr::digital::chunks_to_symbols_bf::sptr d_sym;
 
+      void create_symbol_list();
+
      public:
-      cpm_hier_impl(sig_params sig, int seed);
+      cpm_hier_impl(sig_params sig, bool gray=false);
       ~cpm_hier_impl();
 
     };

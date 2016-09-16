@@ -48,15 +48,6 @@ namespace gr {
       GFSK    = 14
     };
 
-    struct SIGNAL_EXCITER_API cpm_struct
-    {
-     public:
-      unsigned L;                           // number of symbols to overlap
-      int phase_type; // phase type
-      float beta;                           // beta for gaussian & spectral raised cosine
-      float fm_sense;                       // fm sensitivty -> pi*mod_idx for some
-    };
-
     struct SIGNAL_EXCITER_API sig_params
     {
      public:
@@ -104,9 +95,8 @@ namespace gr {
       unsigned L;                           // number of overlapping symbols in CPM mods
       float beta;                           // beta for gaussian & spectral raised cosine
       int phase_type;                       // gr::analog::cpm::cpm_type
-      cpm_struct cpm_params;                // where all the cpm type modulations will have their parameters stored
 
-       bool am_norm;                        // Enable the agc on the AM signals
+      bool am_norm;                        // Enable the agc on the AM signals
     };
 
   } // namespace signal_exciter

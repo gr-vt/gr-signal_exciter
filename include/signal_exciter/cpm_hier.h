@@ -47,7 +47,7 @@ namespace gr {
        * class. signal_exciter::cpm_hier::make is the public interface for
        * creating new instances.
        */
-      static sptr make(sig_params sig, int seed=-1);
+      static sptr make(sig_params sig, bool gray=false);
     };
 
   } // namespace signal_exciter
