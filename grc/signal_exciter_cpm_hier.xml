@@ -11,16 +11,19 @@ sig_params = signal_exciter.sig_params()
 sig_params.type                     = $mtype
 sig_params.sps                      = $sps
 #if $mtype() in ('signal_exciter.FSK', 'signal_exciter.CPM', 'signal_exciter.GFSK')
-sig_params.cpm_params.fm_sense      = $sense
+sig_params.order                    = $order
+sig_params.mod_idx                  = $midx
+#else
+sig_params.order                    = 2
 #end if
 #if $mtype() in ('signal_exciter.CPM', 'signal_exciter.GMSK', 'signal_exciter.GFSK')
-sig_params.cpm_params.L             = $L
-sig_params.cpm_params.beta          = $beta
+sig_params.L                        = $L
+sig_params.beta                     = $beta
 #end if
 #if $mtype() in ('signal_exciter.CPM')
-sig_params.cpm_params.phase_type    = $ptype
+sig_params.phase_type               = $ptype
 #end if
-self.$id = signal_exciter.cpm_hier(sig_params, $seed)
+self.$id = signal_exciter.cpm_hier(sig_params, $gray)
 </make>
 
 
@@ -76,11 +79,45 @@ self.$id = signal_exciter.cpm_hier(sig_params, $seed)
     </option>
     <option>
       <name>Gaussian</name>
-      <key>analog.cpm.Gaussian</key>
+      <key>analog.cpm.GAUSSIAN</key>
     </option>
     <option>
       <name>Tamed FM</name>
       <key>analog.cpm.TFM</key>
+    </option>
+  </param>
+  <param>
+    <name>Modulation Order</name>
+    <key>order</key>
+    <value>2</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM','signal_exciter.GFSK','signal_exciter.FSK')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Gray Coding</name>
+    <key>gray</key>
+    <value>True</value>
+    <type>enum</type>
+    <hide>
+#if $mtype() in ('signal_exciter.CPM','signal_exciter.GFSK','signal_exciter.FSK')
+  none
+#else
+  all
+#end if
+    </hide>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+    <option>
+      <name>No</name>
+      <key>False</key>
     </option>
   </param>
   <param>
@@ -90,9 +127,9 @@ self.$id = signal_exciter.cpm_hier(sig_params, $seed)
     <type>int</type>
   </param>
   <param>
-    <name>Sensitivity</name>
-    <key>sense</key>
-    <value>pi/2.</value>
+    <name>Modulation Index</name>
+    <key>midx</key>
+    <value>0.5</value>
     <type>real</type>
     <hide>
 #if $mtype() in ('signal_exciter.FSK', 'signal_exciter.CPM', 'signal_exciter.GFSK')
@@ -128,16 +165,17 @@ self.$id = signal_exciter.cpm_hier(sig_params, $seed)
 #end if
     </hide>
   </param>
-  <param>
-    <name>Seed</name>
-    <key>seed</key>
-    <value>-1</value>
-    <type>int</type>
-  </param>
 
-
+  <sink>
+    <name>in</name>
+    <type>byte</type>
+  </sink>
   <source>
     <name>out</name>
     <type>complex</type>
   </source>
+
+  <doc>
+    For GFSK -> Sensitivity = PI*(Modulation Index)
+  </doc>
 </block>
