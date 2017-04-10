@@ -7,7 +7,7 @@
 Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame, 
                          bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
                          int mod_type, int mod_order, float mod_offset, int seed, bool add_sync,
-                         float* window, size_t length, int interp,
+                         float* symbol_taper, size_t sample_overlap, float* interp_taps, size_t tap_len, int interp,
                          bool enable, size_t buff_size, size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
@@ -25,7 +25,8 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
     d_interp(interp),
     d_samp_offset(0),
     d_branch_offset(0),
-    d_frame_offset(0)
+    d_frame_offset(0),
+    d_samp_overlap(sample_overlap)
 {
   boost::mutex::scoped_lock scoped_lock(fftw_lock());
 
@@ -67,21 +68,31 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
   d_sym_counter = 0;
   items_written = 0;
 
-  if(length==0){
-    d_window = std::vector<float>(1,1.);
+  if(tap_len==0){
+    d_interp_taps = std::vector<float>(1,1.);
   }
   else{
     double power_check = 0.;
-    d_window = std::vector<float>(length);
-    for(size_t idx = 0; idx < length; idx++){
-      d_window[idx] = window[idx];
-      power_check += window[idx]*window[idx];
+    d_interp_taps = std::vector<float>(tap_len);
+    for(size_t idx = 0; idx < tap_len; idx++){
+      d_interp_taps[idx] = interp_taps[idx];
+      power_check += interp_taps[idx]*interp_taps[idx];
     }
-    double normalizer = sqrt(interp/power_check);
-    for(size_t idx = 0; idx < length; idx++){
-      d_window[idx] *= normalizer;
+    double normalizer = sqrt(double(interp)/power_check);
+    for(size_t idx = 0; idx < tap_len; idx++){
+      d_interp_taps[idx] *= normalizer;
     }
   }
+  if(d_samp_overlap){
+    d_taper = std::vector<float>(d_samp_overlap);
+    for(size_t idx = 0; idx < d_samp_overlap; idx++){
+      d_taper[idx] = symbol_taper[idx];
+    }
+  }
+  else{
+    d_taper = std::vector<float>(0);
+  }
+
   load_firs();
   d_symbol_length = d_fftsize+d_cp_len;
 
@@ -136,7 +147,7 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
     d_frames_needed = ceil(frame_counter);
 
     //make a frame at a time
-    d_frame = std::vector<complexf>(d_frame_length, complexf(0.,0.));
+    d_frame = std::vector<complexf>(d_frame_length+d_samp_overlap, complexf(0.,0.));
     d_past = std::vector<complexf>(d_hist);
     
     //space for the individual ofdm symbols
@@ -161,9 +172,16 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
       generate_frame();
 
       //determine how much to copy of the frame
-      mincpy = std::min(d_frame_length, left_to_fill);
+      mincpy = std::min(d_frame_length+d_samp_overlap, left_to_fill);
       if(mincpy > 0){
-        memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length-mincpy], mincpy*sizeof(complexf) );
+        if(mincpy > d_frame_length){//need to blend the overlap of the start of the frame
+          for(size_t idx = (d_frame_length+d_samp_overlap)-mincpy; idx < d_samp_overlap; idx++){
+            d_past[left_to_fill-mincpy] = d_past[left_to_fill-mincpy]*d_taper[d_samp_overlap-1-idx]
+                                        + d_frame[d_frame_length-mincpy]*d_taper[idx];
+            mincpy--;//remove the overlap from the copy count
+          }
+        }
+        memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], mincpy*sizeof(complexf) );
         left_to_fill -= mincpy;
       }
     }
@@ -205,15 +223,18 @@ Signal_OFDM::generate_sync()
     d_prefft_cache[idx*2] = first_sym[idx]*complexf(sqrt(2.),0.);
   }
   do_fft();
-  memcpy( &d_frame[0], &d_postfft_cache[d_fftsize-d_cp_len], sizeof(complexf)*d_cp_len );
-  memcpy( &d_frame[d_cp_len], &d_postfft_cache[0], sizeof(complexf)*d_fftsize );
+  memcpy( &d_frame[0], &d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)], sizeof(complexf)*(d_cp_len+d_samp_overlap) );
+  memcpy( &d_frame[d_cp_len+d_samp_overlap], &d_postfft_cache[0], sizeof(complexf)*d_fftsize );
   for(size_t idx = 0; idx < d_fftsize/2; idx++){
     d_prefft_cache[idx*2] = first_sym[idx] * exp(complexf(0., 2*M_PI*d_pn1[idx]/4.));
     d_prefft_cache[idx*2+1] = d_prefft_cache[idx*2] * exp(complexf(0., 2*M_PI*d_pn2[idx]/4.));
   }
   do_fft();
-  memcpy( &d_frame[d_symbol_length], &d_postfft_cache[d_fftsize-d_cp_len], sizeof(complexf)*d_cp_len );
-  memcpy( &d_frame[d_symbol_length+d_cp_len], &d_postfft_cache[0], sizeof(complexf)*d_fftsize );
+  for(size_t idx = 0; idx < d_samp_overlap; idx++){
+    d_frame[d_symbol_length+idx] = d_frame[d_symbol_length+idx]*d_taper[d_samp_overlap-1-idx] + d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)+idx]*d_taper[idx];
+  }
+  memcpy( &d_frame[d_symbol_length+d_samp_overlap], &d_postfft_cache[d_fftsize-d_cp_len], sizeof(complexf)*d_cp_len );
+  memcpy( &d_frame[d_symbol_length+d_cp_len+d_samp_overlap], &d_postfft_cache[0], sizeof(complexf)*d_fftsize );
 }
 
 
@@ -312,13 +333,33 @@ Signal_OFDM::filter( size_t nout, complexf* out )
 
   symbs_needed = frames_needed * d_frame_length;
 
-  size_t total_input_len = symbs_needed + d_past.size();
+  size_t total_input_len = symbs_needed + d_past.size() + d_samp_overlap;
 
+  size_t min_backtrack;
   d_filt_in = (gr_complex*) volk_malloc( total_input_len*sizeof(complexf), d_align );
   memcpy( &d_filt_in[0], &d_past[0], d_past.size()*sizeof(complexf) );
   for(size_t ff = 0; ff < frames_needed; ff++){
     generate_frame();
-    memcpy( &d_filt_in[ff*d_frame_length + d_past.size()], &d_frame[0], d_frame_length*sizeof(complexf) );
+
+    min_backtrack = std::min(ff*d_frame_length + d_past.size(), d_samp_overlap);
+    if(min_backtrack){
+      for(size_t idx = (d_samp_overlap)-min_backtrack; idx < d_samp_overlap; idx++){
+        d_filt_in[ff*d_frame_length + d_past.size() - d_samp_overlap + idx] = d_filt_in[ff*d_frame_length + d_past.size() - d_samp_overlap + idx] * d_taper[d_samp_overlap-1-idx]
+                                                                            + d_frame[idx]*d_taper[idx];
+      }
+      memcpy( &d_filt_in[ff*d_frame_length + d_past.size()], &d_frame[d_samp_overlap], d_frame_length*sizeof(complexf) );
+    }
+    else{//there might still be overlap needed
+      if(d_samp_overlap){//still need overlap, whelp doing it...
+        for(size_t idx = 0; idx < d_samp_overlap; idx++){
+          d_filt_in[idx] = d_filt_in[idx]*d_taper[d_samp_overlap-1-idx] + d_frame[idx]*d_taper[idx];
+        }
+        memcpy( &d_filt_in[ff*d_frame_length + d_past.size() + d_samp_overlap], &d_frame[d_samp_overlap], d_frame_length*sizeof(complexf) );
+      }
+      else{//no need for overlap
+        memcpy( &d_filt_in[ff*d_frame_length + d_past.size()], &d_frame[0], d_frame_length*sizeof(complexf) );
+      }
+    }
   }
 
   size_t oo = 0, ii = 0;
@@ -346,8 +387,8 @@ Signal_OFDM::load_firs()
 {
   //printf("OFDM::Attempting to load filters.\n");
   size_t intp = d_interp;
-  size_t ts = d_window.size() / intp;
-  if((d_window.size() % intp)){
+  size_t ts = d_interp_taps.size() / intp;
+  if((d_interp_taps.size() % intp)){
     ts++;
   }
   //printf("OFDM:: Intp(%lu), ts(%lu), sps(%d), d_overlap(%lu).\n",intp,ts,d_sps,d_overlap);
@@ -363,8 +404,8 @@ Signal_OFDM::load_firs()
   }
   //printf("OFDM:: taps init 0.\n");
 
-  for(size_t idx = 0; idx < d_window.size(); idx++){
-    d_taps[idx % intp][idx / intp] = d_window[idx];
+  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = d_interp_taps[idx];
   }
   //printf("OFDM:: taps filled.\n");
 
@@ -430,9 +471,13 @@ Signal_OFDM::generate_frame()
     }
     do_fft();
 
-    memcpy( &d_frame[(d_symbol_length)*(d_symbol_idx)],
+    for(size_t idx = 0; idx < d_samp_overlap; idx++){
+      d_frame[(d_symbol_length)*(d_symbol_idx)+idx] = d_frame[(d_symbol_length)*(d_symbol_idx)+idx]*d_taper[d_samp_overlap-1-idx]
+                                                    + d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)+idx]*d_taper[idx];
+    }
+    memcpy( &d_frame[(d_symbol_length)*(d_symbol_idx)+d_samp_overlap],
             &d_postfft_cache[d_fftsize-d_cp_len], sizeof(complexf)*d_cp_len );
-    memcpy( &d_frame[(d_symbol_length)*(d_symbol_idx)+d_cp_len],
+    memcpy( &d_frame[(d_symbol_length)*(d_symbol_idx)+d_cp_len+d_samp_overlap],
             &d_postfft_cache[0], sizeof(complexf)*d_fftsize );
     d_symbol_idx++;
     d_sym_counter++;

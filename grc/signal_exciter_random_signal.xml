@@ -15,7 +15,7 @@ sig_params.mod              = $mod
 sig_params.order            = $order
 sig_params.offset           = $offset
 #end if
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK')
 sig_params.sps              = $sps
 sig_params.pulse_len        = $pulse_len
 
@@ -69,6 +69,29 @@ for ii in range(#end raw $pilot_count#raw):#end raw
   $plid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.pilot_locations  = $plid
+sig_params.samp_overlap     = $samp_overlap
+
+#set $tpid = '_%s_taper'%$id
+#set $temp = '_%s_temp'%$id
+$tpid = signal_exciter.FloatVector(sig_params.samp_overlap)
+$temp = $taper
+#raw
+for ii in range(#end raw $samp_overlap#raw):#end raw
+  $tpid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.taper            = $tpid
+sig_params.sps              = $interp
+sig_params.pulse_len        = $interp_len
+
+#set $psid = '_%s_pulse_shape'%$id
+#set $temp = '_%s_temp'%$id
+$psid = signal_exciter.FloatVector(sig_params.pulse_len)
+$temp = $interp_taps
+#raw
+for ii in range(#end raw $interp_len#raw):#end raw
+  $psid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.pulse_shape      = $psid
 
 sig_params.backoff          = $backoff
 sig_params.add_sync         = $add_sync
@@ -222,7 +245,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
   none
 #else
   all
@@ -235,7 +258,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>[1]</value>
     <type>float_vector</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK')
   none
 #else
   all
@@ -248,7 +271,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK')
   none
 #else
   all
@@ -558,6 +581,71 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
       <name>Tamed FM</name>
       <key>cpm.TFM</key>
     </option>
+  </param>
+  <param>
+    <name>Interpolation</name>
+    <key>interp</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Interpolation Taps</name>
+    <key>interp_taps</key>
+    <value>[1]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Interpolation Tap Length</name>
+    <key>interp_len</key>
+    <value>1</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Taper</name>
+    <key>taper</key>
+    <value>[]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Sample Base Overlap</name>
+    <key>samp_overlap</key>
+    <value>0</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.OFDM')
+  none
+#else
+  all
+#end if
+    </hide>
   </param>
   <param>
     <name>Seed</name>

@@ -80,7 +80,8 @@ namespace gr {
       else if(mod_type == OFDM){
         d_mod = new Signal_OFDM(d_params.fftsize,d_params.cp_len,d_params.active_carriers,d_params.syms_per_frame,
           d_params.pilot_per_frame, d_params.pilot_count, &d_params.pilot_locations[0], d_params.backoff,
-          d_params.mod, d_params.order,d_params.offset, seed, d_params.add_sync,&d_params.pulse_shape[0],d_params.pulse_len,int(d_params.sps));
+          d_params.mod, d_params.order,d_params.offset, seed, d_params.add_sync, &d_params.taper[0], d_params.samp_overlap,
+          &d_params.pulse_shape[0], d_params.pulse_len, int(d_params.sps));
       }
       else if(mod_type == CWMORSE){
         //printf("cpw = %d\nwpm = %0.0f\nbw = %u\nsr = %lf",sig.char_per_word,sig.words_per_minute,sig.base_word,(double(sig.words_per_minute*(sig.base_word ? 60 : 50))/60.));
