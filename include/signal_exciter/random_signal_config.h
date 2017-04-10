@@ -96,7 +96,10 @@ namespace gr {
       float beta;                           // beta for gaussian & spectral raised cosine
       int phase_type;                       // gr::analog::cpm::cpm_type
 
-      bool am_norm;                        // Enable the agc on the AM signals
+      bool am_norm;                         // Enable the agc on the AM signals
+
+      std::vector<float> taper;             // OFDM Specific
+      size_t samp_overlap;                  // OFDM Specific
     };
 
   } // namespace signal_exciter

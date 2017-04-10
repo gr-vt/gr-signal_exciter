@@ -22,6 +22,7 @@ class Signal_OFDM : public Signal_Base
     size_t d_cp_len;
     size_t d_active;
     size_t d_spf;
+    size_t d_samp_overlap;
     bool d_ppf;
     size_t d_npilots;
     std::vector<size_t> d_active_list;
@@ -76,7 +77,8 @@ class Signal_OFDM : public Signal_Base
     size_t d_branch_offset;//starting branch in interp filter
     size_t d_samp_offset;//starting sample in frame
     size_t d_frame_offset;//starting frame in cache
-    std::vector<float> d_window;
+    std::vector<float> d_interp_taps;
+    std::vector<float> d_taper;
     std::vector< gr::filter::kernel::fir_filter_ccf* > d_firs;
     std::vector< std::vector<float> > d_taps;
     size_t d_hist;
@@ -105,7 +107,7 @@ class Signal_OFDM : public Signal_Base
     Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame, 
                 bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
                 int mod_type, int mod_order, float mod_offset, int seed, bool add_sync=false,
-                float* window=NULL, size_t length=0, int interp=1,
+                float* symbol_taper=NULL, size_t sample_overlap=0, float* interp_taps=NULL, size_t tap_len=0, int interp=1,
                 bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_OFDM();
 
