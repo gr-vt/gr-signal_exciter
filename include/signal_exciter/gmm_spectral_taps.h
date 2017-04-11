@@ -27,6 +27,14 @@
 #include <stdio.h>
 #include <fftw3.h>
 
+/*
+Working prototype model
+fs = 8000;
+mu = [200,450,1500,2500,3500]/fs;
+sig = [50,75,750,250,250]/fs;
+rho = [.29,.60,.08,.01,.02];
+*/
+
 class GMM_Spectral_Taps
 {
  private:
