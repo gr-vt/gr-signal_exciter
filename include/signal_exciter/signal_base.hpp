@@ -12,6 +12,7 @@
 #include <signal_exciter/signal_threaded_buffer.h>
 #include <boost/thread/mutex.hpp>
 #include <gnuradio/random.h>
+#include <boost/random/random_device.hpp>
 
 
 typedef std::complex<float> complexf;
@@ -31,6 +32,7 @@ class Signal_Base
     virtual void auto_fill_signal() = 0;
 
   protected:
+    boost::random_device d_rd;
     gr::random *d_rng;
     //For thread safe create of fftw objects.
     static boost::mutex s_mutex_fftw;
