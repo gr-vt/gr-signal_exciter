@@ -148,7 +148,7 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
 
     //make a frame at a time
     d_frame = std::vector<complexf>(d_frame_length+d_samp_overlap, complexf(0.,0.));
-    d_past = std::vector<complexf>(d_hist);
+    d_past = std::vector<complexf>(d_hist+d_samp_overlap,complexf(0.,0.));
     
     //space for the individual ofdm symbols
     d_prefft_cache = std::vector<complexf>(d_fftsize, complexf(0.,0.));
@@ -163,8 +163,12 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
       d_pn2[idx] = (d_pn2[idx-1]+3)%4;
     }
 
-    size_t left_to_fill = d_hist;
+    size_t left_to_fill = d_hist+d_samp_overlap;
     size_t mincpy;
+
+    if(left_to_fill > d_frame_length*d_frames_needed){//d_samp_overlap is the difference
+      d_frames_needed++;
+    }
 
     //fill the frame_cache
     for(size_t fidx = 0; fidx < d_frames_needed; fidx++){
@@ -173,16 +177,79 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
 
       //determine how much to copy of the frame
       mincpy = std::min(d_frame_length+d_samp_overlap, left_to_fill);
+      //printf("Need to fill (%lu), filling (%lu)\n",left_to_fill,mincpy);
+
       if(mincpy > 0){
-        if(mincpy > d_frame_length){//need to blend the overlap of the start of the frame
-          for(size_t idx = (d_frame_length+d_samp_overlap)-mincpy; idx < d_samp_overlap; idx++){
-            d_past[left_to_fill-mincpy] = d_past[left_to_fill-mincpy]*d_taper[d_samp_overlap-1-idx]
-                                        + d_frame[d_frame_length-mincpy]*d_taper[idx];
-            mincpy--;//remove the overlap from the copy count
+        // this is reverse of everwhere else as this is back-filled, not front-filled like elsewhere
+        //// CONDITION: Need to fill the past
+        if(mincpy == d_frame_length+d_samp_overlap){
+          //// CONDITION: The past can accept a full frame and overlap
+          if(fidx == 0){
+            //// CONDITION: The past can accept a full frame and overlap; however, modify the head, don't modify the tail
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[0], (d_frame_length+d_samp_overlap)*sizeof(complexf) );
+            for(size_t idx = 0; idx < d_samp_overlap; idx++){
+              d_past[left_to_fill-mincpy+idx] *= d_taper[idx];
+            }
+            //printf("Altering head [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-mincpy+d_samp_overlap);
+            //printf("\tFilling past from [%lu, %lu)\n",left_to_fill-mincpy+d_samp_overlap, left_to_fill-mincpy+d_frame_length+d_samp_overlap);
           }
+          else{
+            //// CONDITION: The past can accept a full frame and overlap; however, both head and tail need to be modified
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[0], (d_frame_length)*sizeof(complexf) );
+            for(size_t idx = 0; idx < d_samp_overlap; idx++){
+              d_past[left_to_fill-mincpy+idx] *= d_taper[idx];
+            }
+            //printf("Altering head [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-mincpy+d_samp_overlap);
+            //printf("\tFilling past from [%lu, %lu)\n",left_to_fill-mincpy+d_samp_overlap, left_to_fill-mincpy+d_frame_length);
+            mincpy -= d_frame_length;
+            for(size_t idx = 0; idx < d_samp_overlap; idx++){
+              d_past[left_to_fill-mincpy+idx] += d_frame[d_frame_length+idx]*d_taper[d_samp_overlap-1-idx];
+            }
+            //printf("\tmerging tail [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-mincpy+d_samp_overlap);
+          }
+          left_to_fill -= d_frame_length;
         }
-        memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], mincpy*sizeof(complexf) );
-        left_to_fill -= mincpy;
+        else if(mincpy > d_frame_length){
+          //// CONDITION: The past can accept a full frame and some overlap; modify what is needed for the head
+          for(size_t idx = (d_frame_length+d_samp_overlap)-mincpy; idx < d_samp_overlap; idx++){
+            d_past[left_to_fill-mincpy] = d_frame[d_frame_length+d_samp_overlap-mincpy]*d_taper[idx];
+            mincpy--;
+          }
+          //printf("Altering head [%lu, %lu)\n",left_to_fill-(mincpy+d_samp_overlap), left_to_fill-mincpy);
+          if(fidx>0){
+            //// CONDITION: The past can accept a full frame and some overlap: Need to modify tail and join
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], (d_frame_length-d_samp_overlap)*sizeof(complexf) );
+            //printf("\tFilling past from [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-mincpy+(d_frame_length-d_samp_overlap));
+            mincpy -= (d_frame_length-d_samp_overlap);
+            for(size_t idx = 0; idx < d_samp_overlap; idx++){
+              d_past[left_to_fill-mincpy+idx] += d_frame[d_frame_length+d_samp_overlap-mincpy+idx] * d_taper[d_samp_overlap-1-idx];
+            }
+            //printf("\tmerging tail [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-mincpy+d_samp_overlap);
+          }
+          else{
+            //// CONDITION: The past can accept a full frame and some overlap: don't modify tail
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], mincpy*sizeof(complexf) );
+            //printf("\tFilling past from [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill);
+          }
+          left_to_fill -= d_frame_length;
+        }
+        else{
+          //// CONDITION: The past can accept less than a full frame
+          if(fidx > 0){
+            //// CONDITION: The past can accept less than a full frame: Need to modify tail and join
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], (mincpy-d_samp_overlap)*sizeof(complexf) );
+            for(size_t idx = 0; idx < d_samp_overlap; idx++){
+              d_past[left_to_fill-d_samp_overlap+idx] += d_frame[d_frame_length+idx] * d_taper[d_samp_overlap-1-idx];
+            }
+            //printf("Filling past from [%lu, %lu) merging tail [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill-d_samp_overlap, left_to_fill-d_samp_overlap, left_to_fill);
+          }
+          else{
+            //// CONDITION: The past can accept less than a full frame: don't need to modify anything here
+            memcpy( &d_past[left_to_fill-mincpy], &d_frame[d_frame_length+d_samp_overlap-mincpy], (mincpy)*sizeof(complexf) );
+            //printf("Filling past from [%lu, %lu)\n",left_to_fill-mincpy, left_to_fill);
+          }
+          left_to_fill -= mincpy;
+        }
       }
     }
 
@@ -192,6 +259,7 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
   }
 
   filter(sample_count, output);
+  //printf("First sample: (%1.3e, %1.3e)\n",output[0].real(),output[0].imag());
 
 }
 
@@ -307,7 +375,11 @@ Signal_OFDM::filter( size_t nout, complexf* out )
   //subtract out the symbols needed for the filter
   total_samps = total_samps - (d_hist*d_interp);
 
-  if(total_samps > d_past.size()*d_interp){
+  //subtract out the partial overlap at the end
+  total_samps = total_samps - d_samp_overlap;
+
+  if(total_samps > (d_past.size()-d_samp_overlap)*d_interp){
+    printf("Getting a ts(%lu) and a stuffing of (%lu)\n",total_samps,(d_past.size()-d_samp_overlap)*d_interp);
     printf("This is a logic error.\n");
   }
 
@@ -333,7 +405,7 @@ Signal_OFDM::filter( size_t nout, complexf* out )
 
   symbs_needed = frames_needed * d_frame_length;
 
-  size_t total_input_len = symbs_needed + d_past.size() + d_samp_overlap;
+  size_t total_input_len = symbs_needed + d_past.size();
 
   size_t min_backtrack;
   d_filt_in = (gr_complex*) volk_malloc( total_input_len*sizeof(complexf), d_align );
@@ -444,7 +516,7 @@ Signal_OFDM::generate_frame()
     //add pilots here
     if(d_ppf){
       //pilots are given per frame
-      //if 'sync' is used, start on second symbol
+      //if 'sync' is used, start on symbol index 2
       //printf("Adding frame based pilots on symbol (%lu)\n",d_symbol_idx);
       size_t poffset = d_sync ? 2 : 0;
       while((d_pilot_list[pidx]-d_active*(d_symbol_idx-poffset))<d_active){
@@ -470,10 +542,14 @@ Signal_OFDM::generate_frame()
       pidx = 0;
     }
     do_fft();
-
-    for(size_t idx = 0; idx < d_samp_overlap; idx++){
-      d_frame[(d_symbol_length)*(d_symbol_idx)+idx] = d_frame[(d_symbol_length)*(d_symbol_idx)+idx]*d_taper[d_samp_overlap-1-idx]
-                                                    + d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)+idx]*d_taper[idx];
+    if(d_symbol_idx == 0){
+      memcpy( &d_frame[0], &d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)], sizeof(complexf)*d_samp_overlap );
+    }
+    else{
+      for(size_t idx = 0; idx < d_samp_overlap; idx++){
+        d_frame[(d_symbol_length)*(d_symbol_idx)+idx] = d_frame[(d_symbol_length)*(d_symbol_idx)+idx]*d_taper[d_samp_overlap-1-idx]
+                                                      + d_postfft_cache[d_fftsize-(d_cp_len+d_samp_overlap)+idx]*d_taper[idx];
+      }
     }
     memcpy( &d_frame[(d_symbol_length)*(d_symbol_idx)+d_samp_overlap],
             &d_postfft_cache[d_fftsize-d_cp_len], sizeof(complexf)*d_cp_len );

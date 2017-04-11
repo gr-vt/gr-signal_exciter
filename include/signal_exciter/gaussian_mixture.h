@@ -26,6 +26,7 @@
 #include <time.h>
 #include <boost/random.hpp>
 #include <boost/random/normal_distribution.hpp>
+#include <boost/random/random_device.hpp>
 #include <stdio.h>
 #include <gnuradio/filter/fir_filter.h>
 
@@ -34,15 +35,16 @@ class Gaussian_Mixture
   private:
     int d_seed;
 
+    boost::random_device d_rd;
+    boost::mt19937 d_rng;
+
   public:
 
     void set_seed(int seed)
     {
       //printf("Setting the seed\n");
       d_seed = seed;
-      //if(d_seed<0) d_rng->seed(time(NULL));
-      //else d_rng->seed(d_seed);
-      if(d_seed<0) d_seed = time(NULL);
+      if(d_seed < 0) d_seed = d_rd();
       d_rng.seed(d_seed);
     }
 
@@ -65,7 +67,7 @@ class Gaussian_Mixture
 
     gr::filter::kernel::fir_filter_fff* d_fir;
 
-    boost::mt19937 d_rng;
+
     //boost::mt19937 *d_rng;
     //boost::normal_distribution<> d_dist1;
     //boost::normal_distribution<> d_dist2;

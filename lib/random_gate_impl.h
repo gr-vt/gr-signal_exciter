@@ -23,6 +23,7 @@
 
 #include <signal_exciter/random_gate.h>
 #include <gnuradio/random.h>
+#include <boost/random/random_device.hpp>
 
 namespace gr {
   namespace signal_exciter {
@@ -45,6 +46,7 @@ namespace gr {
       size_t d_cycle_count;
       size_t d_cycle_counter;
 
+      boost::random_device d_rd;
       gr::random* d_rng;
 
       size_t rand_on();
@@ -62,8 +64,7 @@ namespace gr {
       void set_seed(int seed)
       {
         d_seed = seed;
-        if(d_seed<0) d_seed = time(NULL);
-        //srand(d_seed);
+        if(d_seed < 0) d_seed = d_rd();
       }
     };
 
