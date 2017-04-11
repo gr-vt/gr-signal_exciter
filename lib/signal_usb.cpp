@@ -109,7 +109,7 @@ Signal_USB::generate_signal(complexf* output, size_t sample_count)
   do_ifft(sample_count);
 
   fftwf_free( d_fft_in );
-  fftwf_free( d_fft_out );\
+  fftwf_free( d_fft_out );
   fftwf_destroy_plan( d_fft );
   fftwf_destroy_plan( d_ifft );
 

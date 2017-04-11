@@ -4,6 +4,7 @@
 
 #include <signal_exciter/signal_base.hpp>
 #include <signal_exciter/gaussian_mixture.h>
+#include <signal_exciter/gmm_spectral_taps.h>
 #include <fftw3.h>
 #include <gnuradio/analog/agc.h>
 
@@ -20,6 +21,7 @@ class Signal_DSB : public Signal_Base
     bool d_first_pass;
 
     Gaussian_Mixture d_gm;
+    GMM_Spectral_Taps d_gmm_tap_gen;
 
     std::vector<complexf> d_symbol_cache;
     std::vector<float> d_fm;
