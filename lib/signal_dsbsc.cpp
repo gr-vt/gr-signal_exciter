@@ -107,14 +107,7 @@ Signal_DSBSC::filter( size_t nout, complexf* out )
 {
   size_t total_samps = d_past.size();
 
-  size_t samps_needed;
-  if(nout < total_samps){
-    samps_needed = 0;
-  }
-  else{
-    samps_needed = nout;
-  }
-  size_t symbs_needed = samps_needed;
+  size_t symbs_needed = nout;
 
   size_t total_input_len = symbs_needed + d_past.size();
   d_filt_in = (float*) volk_malloc( total_input_len*sizeof(float), d_align );
@@ -135,7 +128,8 @@ Signal_DSBSC::filter( size_t nout, complexf* out )
 
   size_t remaining = total_input_len - ii;
   if(remaining < d_hist){
-    fprintf(stderr,"DSBSC - There isn't enough left in the buffer!!!\n");
+    fprintf(stderr,"DSBSC: nout(%lu), til(%lu), ii(%lu), past(%lu)\n",nout,total_input_len,ii,d_past.size());
+    fprintf(stderr,"DSBSC - There isn't enough left in the buffer!!! (%lu,%lu)\n",remaining,d_hist);
   }
   d_past = std::vector<float>( &d_filt_in[ii], &d_filt_in[total_input_len] );
 
