@@ -397,7 +397,7 @@ int parse_config(std::string config_file, system_var* system_container, gr::sign
     }
     Pprintf("Signal %d, Ploc size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pilot_locations.size());
 
-    // Checking pulse shaping vector (PSK/PAM/QAM...)
+    // Checking pulse shaping vector (PSK/PAM/QAM...) / interpolation taps (OFDM)
     strcpy(str,signumber);
     strcat(str,".pulse_shape");
     ref = config_lookup(cfp, str);
@@ -515,7 +515,7 @@ int parse_config(std::string config_file, system_var* system_container, gr::sign
     }
     Pprintf("Signal %d, taper size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].taper.size());
 
-    // Checking for the number of samples per symbol
+    // Checking for the number of samples per symbol (PSK/PAM/QAM...) / integer interpolation (OFDM)
     strcpy(str,signumber);
     strcat(str,".SPS");
     if(!config_lookup_int(cfp, str, &signal_container[sig-1].sps)){
