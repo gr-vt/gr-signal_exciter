@@ -32,5 +32,6 @@ install(FILES
     periodic_gate.h
     random_gate.h
     one_pass_gate.h
-    gmm.h DESTINATION include/signal_exciter
+    gmm.h
+    gmm_spectral_taps.h DESTINATION include/signal_exciter
 )

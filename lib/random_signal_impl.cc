@@ -54,19 +54,29 @@ namespace gr {
       d_params = sig;
       sig_type_t mod_type = d_params.type;
       if(mod_type == FM){
-        d_mod = new Signal_FM(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed);
+        //d_mod = new Signal_FM(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed);
+        d_mod = new Signal_FM(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == DSB){
-        d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        //d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        d_mod = new Signal_DSB(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == DSBSC){
-        d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        //d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == USB){
-        d_mod = new Signal_USB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        //d_mod = new Signal_USB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        d_mod = new Signal_USB(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == LSB){
-        d_mod = new Signal_LSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        //d_mod = new Signal_LSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        d_mod = new Signal_LSB(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == PSK){
         d_mod = new Signal_PSK(d_params.order,d_params.offset,d_params.sps,&d_params.pulse_shape[0],d_params.pulse_len,seed);
