@@ -42,9 +42,47 @@ sig_params.L                = $overlap
 sig_params.beta             = $beta
 #end if
 #if $mtype() in ('signal_exciter.CPM')
-sig_params.phase_type    = $ptype
+sig_params.phase_type       = $ptype
 #end if
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+#if $mtype() in ('signal_exciter.DSB')
+sig_params.mod_idx          = $mod_idx
+sig_params.components       = $components
+
+#set $muid = '_%s_mu'%$id
+#set $temp = '_%s_temp'%$id
+$muid = signal_exciter.FloatVector(sig_params.components)
+$temp = $mus
+#raw
+for ii in range(#end raw sig_params.components#raw):#end raw
+  $muid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.mu               = $muid
+
+#set $sgid = '_%s_simga'%$id
+#set $temp = '_%s_temp'%$id
+$sgid = signal_exciter.FloatVector(sig_params.components)
+$temp = $sigmas
+#raw
+for ii in range(#end raw sig_params.components#raw):#end raw
+  $sgid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.sigma            = $sgid
+
+#set $wtid = '_%s_weight'%$id
+#set $temp = '_%s_temp'%$id
+$wtid = signal_exciter.FloatVector(sig_params.components)
+$temp = $weights
+#raw
+for ii in range(#end raw sig_params.components#raw):#end raw
+  $wtid#raw [ii] = #end raw $temp#raw [ii]
+#end raw
+sig_params.weight           = $wtid
+
+sig_params.fs               = $samp_rate
+sig_params.pulse_len        = $ntaps
+sig_params.am_norm          = False
+#end if
+#if $mtype() in ('signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
 sig_params.mod_idx          = $mod_idx
 sig_params.f_max            = $fmax
 sig_params.var1             = $var1
@@ -292,12 +330,90 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     </hide>
   </param>
   <param>
+    <name>Components</name>
+    <key>components</key>
+    <value>5</value>
+    <type>int</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Distribution Mean</name>
+    <key>mus</key>
+    <value>[200,450,1500,2500,3500]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Distribution Std</name>
+    <key>sigmas</key>
+    <value>[50,75,750,250,250]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Distribution Weight</name>
+    <key>weights</key>
+    <value>[.29,.60,.08,.01,.02]</value>
+    <type>float_vector</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Sample Rate</name>
+    <key>samp_rate</key>
+    <value>8e3</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
+    <name>Tap Length</name>
+    <key>ntaps</key>
+    <value>256</value>
+    <type>float</type>
+    <hide>
+#if $mtype() in ('signal_exciter.DSB')
+  none
+#else
+  all
+#end if
+    </hide>
+  </param>
+  <param>
     <name>F max</name>
     <key>fmax</key>
     <value>0.26</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+#if $mtype() in ('signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
   none
 #else
   all
@@ -310,7 +426,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>0.005</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+#if $mtype() in ('signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
   none
 #else
   all
@@ -323,7 +439,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>0.07</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+#if $mtype() in ('signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
   none
 #else
   all
@@ -336,7 +452,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>0.4</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
+#if $mtype() in ('signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
   none
 #else
   all

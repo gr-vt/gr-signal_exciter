@@ -57,7 +57,9 @@ namespace gr {
         d_mod = new Signal_FM(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed);
       }
       else if(mod_type == DSB){
-        d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        //d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
+        d_mod = new Signal_DSB(d_params.mod_idx,d_params.components,&d_params.mu[0],&d_params.sigma[0],&d_params.weight[0],
+                                d_params.fs,d_params.pulse_len,seed,d_params.am_norm);
       }
       else if(mod_type == DSBSC){
         d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);

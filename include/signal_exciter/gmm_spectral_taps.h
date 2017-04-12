@@ -116,13 +116,21 @@ class GMM_Spectral_Taps
       memset( d_fft_in, 0, sizeof(fftwf_complex)*d_tap_count );
       memset( d_fft_out, 0, sizeof(fftwf_complex)*d_tap_count );
       size_t offset = (size_t)std::ceil(float(d_tap_count)/2.);//ifftshift
-      
+
+      float lmu,lsig,lw,ln;
+
       for(size_t kk = 0; kk < d_mu.size(); kk++){
+        lmu = d_mu[kk]/d_samp_rate;
+        lsig = d_sigma[kk]/d_samp_rate;
+        lw = d_weight[kk]/2.;
         for(size_t idx = 0; idx < d_tap_count; idx++){
-          d_fft_in[(idx-offset)%d_tap_count][0] += d_weight[kk]/2. * (1./(std::sqrt(2*M_PI)*(d_sigma[kk]/d_samp_rate))) * std::exp(-std::pow((d_freq[idx]-(d_mu[idx]/d_samp_rate)),2.)/(2.*d_sigma[kk]*d_sigma[kk]/d_samp_rate/d_samp_rate));
-          d_fft_in[(idx-offset)%d_tap_count][0] += d_weight[kk]/2. * (1./(std::sqrt(2*M_PI)*(d_sigma[kk]/d_samp_rate))) * std::exp(-std::pow((d_freq[idx]+(d_mu[idx]/d_samp_rate)),2.)/(2.*d_sigma[kk]*d_sigma[kk]/d_samp_rate/d_samp_rate));
+          ln = (d_freq[idx]-lmu)/lsig;
+          d_fft_in[(int(idx)-int(offset))%d_tap_count][0] += (lw/std::sqrt(2.*M_PI*lsig*lsig)) * std::exp(-ln*ln/2.);
+          ln = (d_freq[idx]+lmu)/lsig;
+          d_fft_in[(int(idx)-int(offset))%d_tap_count][0] += (lw/std::sqrt(2.*M_PI*lsig*lsig)) * std::exp(-ln*ln/2.);
         }
       }
+      
       fftwf_execute( d_ifft );
 
       offset = (size_t)std::floor(float(d_tap_count)/2.);//fftshift
@@ -149,6 +157,7 @@ class GMM_Spectral_Taps
     d_mu      = std::vector<float>(mus, mus+components);
     d_sigma   = std::vector<float>(sigmas, sigmas+components);
     d_weight  = std::vector<float>(weights, weights+components);
+    d_samp_rate = samp_rate;
     d_tap_count = tap_count;
 
     build_fft();

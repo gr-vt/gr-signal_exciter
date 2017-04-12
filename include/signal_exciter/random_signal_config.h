@@ -76,10 +76,6 @@ namespace gr {
       std::vector<float> pulse_shape;       // The pulse shaping
       size_t pulse_len;                     // The length of the pulse shaping
       float mod_idx;                        // Modulation index (analog mods)
-      float f_max;                          // I don't remember (analog mods)
-      float var1;                           // Variance 1 of Gaussian mixture (analog mods)
-      float var2;                           // Variance 2 of Gaussian mixture (analog mods)
-      float thresh;                         // randU > thresh ? dist1 : dist2 (analog mods)
       size_t fftsize;                       // OFDM fft size
       size_t cp_len;                        // Cyclic Prefix length of OFDM
       size_t active_carriers;               // Number of carriers to use from the fftsize
@@ -100,6 +96,18 @@ namespace gr {
 
       std::vector<float> taper;             // OFDM Specific
       size_t samp_overlap;                  // OFDM Specific
+
+      //reworking analog right now
+      //old
+      float f_max;                          // I don't remember (analog mods)
+      float var1;                           // Variance 1 of Gaussian mixture (analog mods)
+      float var2;                           // Variance 2 of Gaussian mixture (analog mods)
+      float thresh;                         // randU > thresh ? dist1 : dist2 (analog mods)
+      //new
+      std::vector<float> mu;                // mean frequency of each spectral guassian component (analog mods)
+      std::vector<float> sigma;             // std of each spectral guassian component (analog mods)
+      std::vector<float> weight;            // weights of each spectral guassian component (analog mods)
+      size_t components;                    // number of spectral guassian components (analog mods)
     };
 
   } // namespace signal_exciter

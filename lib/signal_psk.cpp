@@ -152,8 +152,8 @@ Signal_PSK::generate_symbols(complexf* output, size_t symbol_count)
 void
 Signal_PSK::generate_signal(complexf* output, size_t sample_count)
 {
-  size_t oo = 0;
-  size_t interp = size_t(d_sps);
+  //size_t oo = 0;
+  //size_t interp = size_t(d_sps);
   d_samp_gen_count++;
 
   // If using threading
