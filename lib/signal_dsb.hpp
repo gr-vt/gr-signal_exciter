@@ -35,26 +35,15 @@ class Signal_DSB : public Signal_Base
     gr::analog::kernel::agc_cc d_agc;
     size_t d_burn;
 
-    //void filter(float* n, float* m, size_t length);
-
     size_t d_enable;
     size_t d_buffer_size;
     size_t d_notify_size;
     bool d_running;
     void auto_fill_symbols();
     void auto_fill_signal();
-/*    signal_threaded_buffer<float>*      d_G1;
-    signal_threaded_buffer<float>*      d_G2;
-    signal_threaded_buffer<float>*      d_Mx;
-    signal_threaded_buffer<float>*      d_Fn;*/
     signal_threaded_buffer<complexf>*   d_Sy;
 
     boost::thread_group d_TGroup;
-
-/*    void gen_gaussian(signal_threaded_buffer<float>* buffer, float var);
-    void gaussian_mix(signal_threaded_buffer<float>* obuff, signal_threaded_buffer<float>* ibuff1, signal_threaded_buffer<float>* ibuff2, float thresh);
-    void auto_filter(signal_threaded_buffer<float>* obuff, signal_threaded_buffer<float>* ibuff);
-    void auto_load_symbols(signal_threaded_buffer<complexf>* obuff, signal_threaded_buffer<float>* ibuff);*/
 
     void auto_gen_GM();
 
@@ -63,8 +52,6 @@ class Signal_DSB : public Signal_Base
     float* d_filt_in;
 
   public:
-//    Signal_DSB(float mod_idx, float f_max, float var1, float var2, float thresh, int seed,
-//                bool norm=false, bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     Signal_DSB(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
                 bool norm = false, bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_DSB();
