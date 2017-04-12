@@ -99,10 +99,10 @@ namespace gr {
 
       //reworking analog right now
       //old
-      float f_max;                          // I don't remember (analog mods)
-      float var1;                           // Variance 1 of Gaussian mixture (analog mods)
-      float var2;                           // Variance 2 of Gaussian mixture (analog mods)
-      float thresh;                         // randU > thresh ? dist1 : dist2 (analog mods)
+      //float f_max;                          // I don't remember (analog mods)
+      //float var1;                           // Variance 1 of Gaussian mixture (analog mods)
+      //float var2;                           // Variance 2 of Gaussian mixture (analog mods)
+      //float thresh;                         // randU > thresh ? dist1 : dist2 (analog mods)
       //new
       std::vector<float> mu;                // mean frequency of each spectral guassian component (analog mods)
       std::vector<float> sigma;             // std of each spectral guassian component (analog mods)
