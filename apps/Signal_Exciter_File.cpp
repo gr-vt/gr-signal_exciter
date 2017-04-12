@@ -397,7 +397,7 @@ int parse_config(std::string config_file, system_var* system_container, gr::sign
     }
     Pprintf("Signal %d, Ploc size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pilot_locations.size());
 
-    // Checking pulse shaping vector (PSK/PAM/QAM/OFDM...)
+    // Checking pulse shaping vector (PSK/PAM/QAM...) / interpolation taps (OFDM)
     strcpy(str,signumber);
     strcat(str,".pulse_shape");
     ref = config_lookup(cfp, str);
@@ -482,7 +482,40 @@ int parse_config(std::string config_file, system_var* system_container, gr::sign
     }
     Pprintf("Signal %d, SPF: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].syms_per_frame);
 
-    // Checking for the number of samples per symbol
+    // Checking for the number of OFDM sample overlapping in an OFDM symbols (OFDM)
+    strcpy(str,signumber);
+    strcat(str,".samp_overlap");
+    int samp_overlap;
+    if(!config_lookup_int(cfp, str, &samp_overlap)){
+      //Failed to find keyword
+      signal_container[sig-1].samp_overlap = 0;
+    }
+    else{
+      //Found keyword
+      signal_container[sig-1].samp_overlap = samp_overlap;
+    }
+    Pprintf("Signal %d, samp_overlap: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].samp_overlap);
+
+    // Checking taper vector (OFDM...)
+    strcpy(str,signumber);
+    strcat(str,".taper");
+    ref = config_lookup(cfp, str);
+    if(ref){
+      // Found Keyword
+      std::vector<double> tapering(signal_container[sig-1].samp_overlap, 1.);
+      std::vector<float> taper(signal_container[sig-1].samp_overlap, 1.);
+      for(int idx = 0; idx < signal_container[sig-1].samp_overlap; idx++){
+        tapering[idx] = config_setting_get_float_elem(ref,idx);
+        taper[idx] = float(tapering[idx]);
+      }
+      signal_container[sig-1].taper = std::vector<float>(taper.begin(),taper.end());
+    }
+    else{
+      signal_container[sig-1].taper = std::vector<float>(0);
+    }
+    Pprintf("Signal %d, taper size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].taper.size());
+
+    // Checking for the number of samples per symbol (PSK/PAM/QAM...) / integer interpolation (OFDM)
     strcpy(str,signumber);
     strcat(str,".SPS");
     if(!config_lookup_int(cfp, str, &signal_container[sig-1].sps)){
@@ -589,61 +622,76 @@ int parse_config(std::string config_file, system_var* system_container, gr::sign
     }
     Pprintf("Signal %d, backoff: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].backoff);
 
-    // Checking for the first variance for the Gaussian Mixture
+    // Checking for the analog component count (Analog...)
     strcpy(str,signumber);
-    strcat(str,".var1");
-    double var1;
-    if(!config_lookup_float(cfp, str, &var1)){
+    strcat(str,".components");
+    int components;
+    if(!config_lookup_int(cfp, str, &components)){
       //Failed to find keyword
-      signal_container[sig-1].var1 = 0.05;
+      signal_container[sig-1].components = 0;
     }
     else{
       //Found keyword
-      signal_container[sig-1].var1 = var1;
+      signal_container[sig-1].components = components;
     }
-    Pprintf("Signal %d, var1: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].var1);
+    Pprintf("Signal %d, components: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].components);
 
-    // Checking for the second variance for the Gaussian Mixture
+    // Checking mu vector (Analog...)
     strcpy(str,signumber);
-    strcat(str,".var2");
-    double var2;
-    if(!config_lookup_float(cfp, str, &var2)){
-      //Failed to find keyword
-      signal_container[sig-1].var2 = 0.007;
+    strcat(str,".mu");
+    ref = config_lookup(cfp, str);
+    if(ref){
+      // Found Keyword
+      std::vector<double> mus(signal_container[sig-1].components, 0.);
+      std::vector<float> mu(signal_container[sig-1].components, 0.);
+      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
+        mus[idx] = config_setting_get_float_elem(ref,idx);
+        mu[idx] = float(mus[idx]);
+      }
+      signal_container[sig-1].mu = std::vector<float>(mu.begin(),mu.end());
     }
     else{
-      //Found keyword
-      signal_container[sig-1].var2 = var2;
+      signal_container[sig-1].mu = std::vector<float>(0);
     }
-    Pprintf("Signal %d, var2: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].var2);
+    Pprintf("Signal %d, mu size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].mu.size());
 
-    // Checking for the max frequency value
+    // Checking sigma vector (Analog...)
     strcpy(str,signumber);
-    strcat(str,".fmax");
-    double fmax;
-    if(!config_lookup_float(cfp, str, &fmax)){
-      //Failed to find keyword
-      signal_container[sig-1].f_max = 0.5;
+    strcat(str,".sigma");
+    ref = config_lookup(cfp, str);
+    if(ref){
+      // Found Keyword
+      std::vector<double> sigs(signal_container[sig-1].components, 0.);
+      std::vector<float> sigm(signal_container[sig-1].components, 0.);
+      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
+        sigs[idx] = config_setting_get_float_elem(ref,idx);
+        sigm[idx] = float(sigs[idx]);
+      }
+      signal_container[sig-1].sigma = std::vector<float>(sigm.begin(),sigm.end());
     }
     else{
-      //Found keyword
-      signal_container[sig-1].f_max = fmax;
+      signal_container[sig-1].sigma = std::vector<float>(0);
     }
-    Pprintf("Signal %d, fmax: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].f_max);
+    Pprintf("Signal %d, sigma size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].sigma.size());
 
-    // Checking for the threshold for the Gaussian Mixture
+    // Checking weight vector (Analog...)
     strcpy(str,signumber);
-    strcat(str,".thresh");
-    double thresh;
-    if(!config_lookup_float(cfp, str, &thresh)){
-      //Failed to find keyword
-      signal_container[sig-1].thresh = 0.4;
+    strcat(str,".weight");
+    ref = config_lookup(cfp, str);
+    if(ref){
+      // Found Keyword
+      std::vector<double> weights(signal_container[sig-1].components, 0.);
+      std::vector<float> weight(signal_container[sig-1].components, 0.);
+      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
+        weights[idx] = config_setting_get_float_elem(ref,idx);
+        weight[idx] = float(weights[idx]);
+      }
+      signal_container[sig-1].weight = std::vector<float>(weight.begin(),weight.end());
     }
     else{
-      //Found keyword
-      signal_container[sig-1].thresh = thresh;
+      signal_container[sig-1].weight = std::vector<float>(0);
     }
-    Pprintf("Signal %d, thresh: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].thresh);
+    Pprintf("Signal %d, weight size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].weight.size());
 
     // Checking for the modulation index
     strcpy(str,signumber);
