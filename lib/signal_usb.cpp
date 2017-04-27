@@ -3,8 +3,10 @@
 #include "signal_usb.hpp"
 #include <stdio.h>//////////////////////////////////
 
-Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                        bool norm, bool enable, size_t buff_size, size_t min_notify)
+Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
+                      float* sigma, float* weight, float samp_rate,
+                      size_t tap_count, int seed, bool norm, float fso,
+                      bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
     d_enable(enable),
@@ -14,7 +16,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu, float* sigma
     d_norm(norm)
 {
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, samp_rate, tap_count);
   generate_taps();
 
@@ -35,6 +37,10 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu, float* sigma
   }
   d_first_pass = true;
 
+
+  printf("usb: fso: %0.3e\n",fso);
+  d_fso = fso;
+
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
   load_fir();
@@ -44,6 +50,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu, float* sigma
 Signal_USB::~Signal_USB()
 {
   delete d_fir;
+  delete d_frac_filt;
   if(d_enable){
     d_running = false;
     d_TGroup.join_all();
@@ -92,10 +99,22 @@ Signal_USB::generate_signal(complexf* output, size_t sample_count)
     for(size_t idx = 0; idx < d_hist; idx++){
       d_past[idx] = d_symbol_cache[idx].real();
     }
+    //fso needs
+    filter( d_frac_cache.size(), &d_frac_cache[0] );
+
     d_first_pass = false;
   }
 
-  filter( sample_count, output );
+  d_time_shift_in = (complexf *) volk_malloc(
+                      (sample_count+d_frac_cache.size())*sizeof(complexf),
+                      d_align);
+  memcpy( &d_time_shift_in[0], &d_frac_cache[0],
+          d_frac_cache.size()*sizeof(complexf) );
+  filter( sample_count, &d_time_shift_in[d_frac_cache.size()] );
+  d_frac_filt->filterN( &output[0], &d_time_shift_in[0], sample_count );
+  memcpy( &d_frac_cache[0], &d_time_shift_in[sample_count],
+          d_frac_cache.size()*sizeof(complexf) );
+  volk_free(d_time_shift_in);
 
   if(d_norm){
     d_agc.scaleN( output, output, sample_count );
@@ -133,7 +152,7 @@ Signal_USB::filter( size_t nout, complexf* out )
   }
   d_past = std::vector<float>( &d_filt_in[ii], &d_filt_in[total_input_len] );
 
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_fft_in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*nout);
   d_fft_out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*nout);
   d_fft = fftwf_plan_dft_r2c_1d( nout, &d_fm[0], d_fft_in, FFTW_ESTIMATE );
@@ -148,6 +167,13 @@ Signal_USB::filter( size_t nout, complexf* out )
     d_fft_in[idx%nout][0] = 0.;
     d_fft_in[idx%nout][1] = 0.;
   }
+
+
+
+
+
+
+
   do_ifft(nout);//output stored in d_output_cache
 
   fftwf_free( d_fft_in );
@@ -176,6 +202,9 @@ Signal_USB::generate_taps()
     d_taps[idx] = d_taps[idx]*d_window[idx];
   }
   d_hist = d_tap_count-1;
+
+  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
+                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
 }
 
 void
@@ -186,6 +215,12 @@ Signal_USB::load_fir()
   d_fir = new gr::filter::kernel::fir_filter_fff(1, dummy_taps);
 
   d_fir->set_taps(d_taps);
+
+  d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_fso);
+  d_frac_filt->set_taps(shifted_taps);
+  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }
 
 
@@ -207,16 +242,16 @@ Signal_USB::do_ifft(size_t samp_count)
   }
 }
 
-void 
+void
 Signal_USB::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size,d_notify_size);
 
   d_TGroup.create_thread( boost::bind(&Signal_USB::auto_gen_GM, this) );
-  
+
 }
 
-void 
+void
 Signal_USB::auto_fill_signal()
 {}
 
@@ -240,5 +275,3 @@ Signal_USB::auto_gen_GM()
     buff_pnt = 0;
   }
 }
-
-

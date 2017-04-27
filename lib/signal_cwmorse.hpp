@@ -3,6 +3,9 @@
 
 
 #include <signal_exciter/signal_base.hpp>
+#include <gnuradio/filter/fir_filter.h>
+#include <gnuradio/filter/firdes.h>
+#include <volk/volk.h>
 #include <algorithm>
 
 
@@ -36,7 +39,7 @@ class Signal_CWMORSE : public Signal_Base
     size_t d_leftover_count;
 
     size_t d_burn;
-    
+
 
     void create_symbol_list();
     void print_symbol_list();
@@ -53,9 +56,20 @@ class Signal_CWMORSE : public Signal_Base
 
     void auto_gen_SYMS();
 
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
+    //volk things
+    int d_align;
+    float* d_filt_in;
+    complexf* d_time_shift_in;
+    gr::filter::kernel::fir_filter_ccf* d_frac_filt;
+    std::vector<complexf> d_frac_cache;
+
   public:
-    Signal_CWMORSE(int d_char_per_word, float words_per_minute, bool base_word, int seed,
-                    bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_CWMORSE(int d_char_per_word, float words_per_minute, bool base_word,
+                    int seed, float fso=0., bool enable=true,
+                    size_t buff_size=8192, size_t min_notify=512);
     ~Signal_CWMORSE();
 
     void generate_signal(complexf* output, size_t sample_count);

@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        bool enable, size_t buff_size, size_t min_notify)
+                        float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -59,7 +59,7 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     else new_order = new_order*2;
   }
   //printf("New Order.\n");
-  
+
   // If not equal, impose the new_order
   if(new_order != d_order){
     if(new_order > 0) d_order = new_order;
@@ -78,12 +78,16 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
+  printf("psk: fso: %0.3e\n",fso);
+  d_fso = fso;
   // Enable background threads for signal generation parallel processing.
+  d_align = volk_get_alignment();
+  // Generate and load the GNURadio FIR Filters with the pulse shape.
+  load_firs();
+  //printf("PSK::Loaded FIR filters.\n");
+
+
   if(d_enable){
-    d_align = volk_get_alignment();
-    // Generate and load the GNURadio FIR Filters with the pulse shape.
-    load_firs();
-    //printf("PSK::Loaded FIR filters.\n");
 
     // Start the running flag for the threads to exit on shutdown
     d_running = true;
@@ -106,9 +110,9 @@ Signal_PSK::~Signal_PSK()
     d_Sy->cleanup();*/
     d_TGroup.join_all();
     delete d_Sy;
-    for(size_t idx = 0; idx < d_sps; idx++){
-      delete d_firs[idx];
-    }
+  }
+  for(size_t idx = 0; idx < d_sps; idx++){
+    delete d_firs[idx];
   }
   delete d_rng;
 }
@@ -316,7 +320,7 @@ Signal_PSK::filter( size_t nout, complexf* out )
 
 
 
-void 
+void
 Signal_PSK::auto_fill_symbols()
 {
   // Create a buffer for the generation thread to fill, and consumer to consumer from
@@ -325,7 +329,7 @@ Signal_PSK::auto_fill_symbols()
   d_TGroup.create_thread( boost::bind(&Signal_PSK::auto_gen_SYMS, this) );
 }
 
-void 
+void
 Signal_PSK::auto_fill_signal()
 {//Currently not doing anything
 }
@@ -335,37 +339,35 @@ void
 Signal_PSK::load_firs()
 {
   size_t interp = size_t(d_sps);
-  
-  std::vector<float> dummy_taps;
 
   d_firs = std::vector< gr::filter::kernel::fir_filter_ccf* >(interp);
-
+  std::vector<float> dummy_taps;
   for(size_t samp_offset = 0; samp_offset < interp; samp_offset++){
     d_firs[samp_offset] = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
   }
 
-  std::vector<float> stretch = d_pulse_shape;
-  size_t increase = stretch.size() % interp;
-  if(increase > 0){
-    increase = interp-increase;
-    while(increase-- > 0){
-      stretch.insert( stretch.end(), 0. );
-    }
-  }
+  size_t leftover = (interp - (d_pulse_shape.size() % interp))%interp;
+  d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
 
-  if( stretch.size() % interp != 0 ){
+  memcpy( &d_proto_taps[0], &d_pulse_shape[0],
+          d_pulse_shape.size()*sizeof(float) );
+
+  if( d_proto_taps.size() % interp ){
     throw_runtime("signal_psk: error setting pulse shaping taps.\n");
   }
 
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
+
   d_taps = std::vector< std::vector<float> >(interp);
 
-  size_t taps_per_branch = stretch.size()/interp;
+  size_t taps_per_branch = shifted_taps.size()/interp;
   for(size_t branch = 0; branch < interp; branch++){
     d_taps[branch].resize(taps_per_branch);
   }
 
-  for(size_t tap_idx = 0; tap_idx < stretch.size(); tap_idx++){
-    d_taps[tap_idx % interp][tap_idx/interp] = stretch[tap_idx];
+  for(size_t tap_idx = 0; tap_idx < shifted_taps.size(); tap_idx++){
+    d_taps[tap_idx % interp][tap_idx/interp] = shifted_taps[tap_idx];
   }
 
   for(size_t branch = 0; branch < interp; branch++){
@@ -424,17 +426,3 @@ Signal_PSK::throw_runtime(std::string err, size_t sc, size_t os, size_t si)
   printf("Threads ended.\n");
   throw std::runtime_error(err.c_str());
 }
-
-
-
-
-
-
-  
-
-
-
-
-
-
-

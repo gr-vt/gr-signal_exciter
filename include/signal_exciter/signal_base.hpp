@@ -13,6 +13,7 @@
 #include <boost/thread/mutex.hpp>
 #include <gnuradio/random.h>
 #include <boost/random/random_device.hpp>
+#include <boost/math/special_functions/sinc.hpp>
 
 
 typedef std::complex<float> complexf;
@@ -40,6 +41,9 @@ class Signal_Base
     virtual boost::mutex& fftw_lock() const {return s_mutex_fftw;}
 
 //    void set_seed(int seed=-1);
+    virtual void time_offset(std::vector<float> &taps,
+                             std::vector<float> &proto,
+                             float offset);
 
   public:
     virtual ~Signal_Base() = 0;
@@ -52,5 +56,25 @@ class Signal_Base
 
 inline Signal_Base::~Signal_Base()
 {}
+
+inline void Signal_Base::time_offset(std::vector<float> &taps,
+                                     std::vector<float> &proto,
+                                     float offset)
+{
+  if((offset > - 1.19e-07)&&(offset<1.19e-07)){
+    taps = std::vector<float>(proto.begin(), proto.end());
+  }
+  else{
+    taps = std::vector<float>(proto.size(),0.);
+
+    for(int idx = 0; idx < proto.size(); idx++){
+      for(int ind = 0; ind < proto.size(); ind++){
+        taps[idx] += proto[ind]*
+            boost::math::sinc_pi(M_PI*(float(idx)-float(ind) - offset));
+      }
+    }
+  }
+
+}
 
 #endif /* INCLUDED_SIGNAL_BASE_HPP */

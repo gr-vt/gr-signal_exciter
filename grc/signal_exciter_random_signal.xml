@@ -3,8 +3,8 @@
   <name>Random Signal</name>
   <key>signal_exciter_random_signal</key>
   <category>[Signal Exciter]</category>
-  <import>import signal_exciter
-from gnuradio.analog import cpm</import>
+  <import>import signal_exciter</import>
+  <import>from gnuradio.analog import cpm</import>
 	<make>None
 sig_params = signal_exciter.sig_params()
 sig_params.type             = $mtype
@@ -53,7 +53,7 @@ sig_params.components       = $components
 $muid = signal_exciter.FloatVector(sig_params.components)
 $temp = $mus
 #raw
-for ii in range(#end raw sig_params.components#raw):#end raw
+for ii in range(#end raw $components#raw):#end raw
   $muid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.mu               = $muid
@@ -63,7 +63,7 @@ sig_params.mu               = $muid
 $sgid = signal_exciter.FloatVector(sig_params.components)
 $temp = $sigmas
 #raw
-for ii in range(#end raw sig_params.components#raw):#end raw
+for ii in range(#end raw $components#raw):#end raw
   $sgid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.sigma            = $sgid
@@ -73,7 +73,7 @@ sig_params.sigma            = $sgid
 $wtid = signal_exciter.FloatVector(sig_params.components)
 $temp = $weights
 #raw
-for ii in range(#end raw sig_params.components#raw):#end raw
+for ii in range(#end raw $components#raw):#end raw
   $wtid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.weight           = $wtid
@@ -131,7 +131,11 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
-self.$id = signal_exciter.random_signal(sig_params, $seed)
+sig_params.frac_symb_offset = $fso
+
+#set $sp_id = 'sig_params_%s_'%$id
+$sp_id = sig_params
+self.$id = signal_exciter.random_signal($sp_id, $seed)
 </make>
 <!--pulse_shape_($id) = signal_exciter.floatArray($pulse_len)
 for ii in range($pulse_len):
@@ -702,6 +706,13 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
   all
 #end if
     </hide>
+  </param>
+  <param>
+    <name>Fractional Symbol Offset</name>
+    <key>fso</key>
+    <value>0.</value>
+    <type>real</type>
+    <hide>part</hide>
   </param>
   <param>
     <name>Seed</name>

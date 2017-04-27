@@ -3,8 +3,10 @@
 #include "signal_dsbsc.hpp"
 #include <stdio.h>//////////////////////////////////
 
-Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                            bool norm, bool enable, size_t buff_size, size_t min_notify)
+Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
+                          float* sigma, float* weight, float samp_rate,
+                          size_t tap_count, int seed, bool norm, float fso,
+                          bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
     d_enable(enable),
@@ -34,6 +36,10 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu, float* s
     }
   }
   d_first_pass = true;
+
+
+  printf("dsbsc: fso: %0.3e\n",fso);
+  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -134,7 +140,7 @@ Signal_DSBSC::filter( size_t nout, complexf* out )
   d_past = std::vector<float>( &d_filt_in[ii], &d_filt_in[total_input_len] );
 
   volk_free(d_filt_in);
-  
+
 }
 
 
@@ -161,19 +167,22 @@ Signal_DSBSC::load_fir()
 
   d_fir = new gr::filter::kernel::fir_filter_fff(1, dummy_taps);
 
+  d_proto_taps = std::vector<float>( d_taps.begin(), d_taps.end() );
+  time_offset(d_taps, d_proto_taps, d_fso);
+
   d_fir->set_taps(d_taps);
 }
 
-void 
+void
 Signal_DSBSC::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size,d_notify_size);
-  
+
   d_TGroup.create_thread( boost::bind(&Signal_DSBSC::auto_gen_GM, this) );
-  
+
 }
 
-void 
+void
 Signal_DSBSC::auto_fill_signal()
 {}
 
@@ -195,5 +204,3 @@ Signal_DSBSC::auto_gen_GM()
     buff_pnt = 0;
   }
 }
-
-  
