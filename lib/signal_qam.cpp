@@ -70,6 +70,8 @@ Signal_QAM::Signal_QAM(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
+
+  printf("qam: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

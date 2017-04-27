@@ -22,13 +22,17 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
   //printf("Seeded.\n");
   d_burn = buff_size;
 
-  create_symbol_list();
-
   d_rng = new gr::random(d_seed, 0, d_letter_count);
 
   d_first_pass = true;
 
+
+  printf("cwmorse: fso: %0.3e\n",fso);
   d_fso = fso;
+
+  d_align = volk_get_alignment();
+
+  create_symbol_list();
 
   if(d_enable){
     d_running = true;
@@ -45,6 +49,7 @@ Signal_CWMORSE::~Signal_CWMORSE()
     delete d_Sy;
   }
   delete d_rng;
+  delete d_frac_filt;
 }
 
 void
@@ -110,7 +115,25 @@ Signal_CWMORSE::generate_symbols(complexf* output, size_t symbol_count)
 void
 Signal_CWMORSE::generate_signal(complexf* output, size_t sample_count)
 {
-  generate_symbols(output,sample_count);
+  if(d_first_pass){
+
+    //fso needs
+    generate_symbols( &d_frac_cache[0], d_frac_cache.size() );
+
+    d_first_pass = false;
+  }
+
+  d_time_shift_in = (complexf *) volk_malloc(
+                      (sample_count+d_frac_cache.size())*sizeof(complexf),
+                      d_align);
+  memcpy( &d_time_shift_in[0], &d_frac_cache[0],
+          d_frac_cache.size()*sizeof(complexf) );
+  generate_symbols( &d_time_shift_in[d_frac_cache.size()], sample_count );
+  d_frac_filt->filterN( &output[0], &d_time_shift_in[0], sample_count );
+  memcpy( &d_frac_cache[0], &d_time_shift_in[sample_count],
+          d_frac_cache.size()*sizeof(complexf) );
+  volk_free(d_time_shift_in);
+
 }
 
 
@@ -216,6 +239,15 @@ Z: 11101110101
 
 
   //print_symbol_list();
+
+  std::vector<float> dummy_taps;
+  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
+                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+  d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_fso);
+  d_frac_filt->set_taps(shifted_taps);
+  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }
 
 void

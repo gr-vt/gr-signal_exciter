@@ -4,6 +4,7 @@
 #include <signal_exciter/signal_base.hpp>
 #include <gnuradio/analog/cpm.h>
 #include <gnuradio/filter/fir_filter.h>
+#include <gnuradio/filter/firdes.h>
 #include <gnuradio/sincos.h>
 #include <volk/volk.h>
 
@@ -57,6 +58,11 @@ class Signal_CPM : public Signal_Base
 
     float d_fso;
     std::vector<float> d_proto_taps;
+
+    //volk things
+    complexf* d_time_shift_in;
+    gr::filter::kernel::fir_filter_ccf* d_frac_filt;
+    std::vector<complexf> d_frac_cache;
 
     void load_firs();
     void filter( size_t nout, complexf* out );

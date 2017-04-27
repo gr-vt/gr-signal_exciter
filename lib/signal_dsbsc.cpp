@@ -37,6 +37,8 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
   }
   d_first_pass = true;
 
+
+  printf("dsbsc: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

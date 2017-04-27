@@ -109,7 +109,7 @@ namespace gr {
       std::vector<float> weight;            // weights of each spectral guassian component (analog mods)
       size_t components;                    // number of spectral guassian components (analog mods)
 
-      float frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
+      double frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
     };
 
   } // namespace signal_exciter

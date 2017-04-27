@@ -37,6 +37,8 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
   }
   d_first_pass = true;
 
+
+  printf("usb: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();
@@ -48,6 +50,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
 Signal_USB::~Signal_USB()
 {
   delete d_fir;
+  delete d_frac_filt;
   if(d_enable){
     d_running = false;
     d_TGroup.join_all();
@@ -96,10 +99,22 @@ Signal_USB::generate_signal(complexf* output, size_t sample_count)
     for(size_t idx = 0; idx < d_hist; idx++){
       d_past[idx] = d_symbol_cache[idx].real();
     }
+    //fso needs
+    filter( d_frac_cache.size(), &d_frac_cache[0] );
+
     d_first_pass = false;
   }
 
-  filter( sample_count, output );
+  d_time_shift_in = (complexf *) volk_malloc(
+                      (sample_count+d_frac_cache.size())*sizeof(complexf),
+                      d_align);
+  memcpy( &d_time_shift_in[0], &d_frac_cache[0],
+          d_frac_cache.size()*sizeof(complexf) );
+  filter( sample_count, &d_time_shift_in[d_frac_cache.size()] );
+  d_frac_filt->filterN( &output[0], &d_time_shift_in[0], sample_count );
+  memcpy( &d_frac_cache[0], &d_time_shift_in[sample_count],
+          d_frac_cache.size()*sizeof(complexf) );
+  volk_free(d_time_shift_in);
 
   if(d_norm){
     d_agc.scaleN( output, output, sample_count );
@@ -152,6 +167,13 @@ Signal_USB::filter( size_t nout, complexf* out )
     d_fft_in[idx%nout][0] = 0.;
     d_fft_in[idx%nout][1] = 0.;
   }
+
+
+
+
+
+
+
   do_ifft(nout);//output stored in d_output_cache
 
   fftwf_free( d_fft_in );
@@ -180,6 +202,9 @@ Signal_USB::generate_taps()
     d_taps[idx] = d_taps[idx]*d_window[idx];
   }
   d_hist = d_tap_count-1;
+
+  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
+                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
 }
 
 void
@@ -190,6 +215,12 @@ Signal_USB::load_fir()
   d_fir = new gr::filter::kernel::fir_filter_fff(1, dummy_taps);
 
   d_fir->set_taps(d_taps);
+
+  d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_fso);
+  d_frac_filt->set_taps(shifted_taps);
+  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }
 
 

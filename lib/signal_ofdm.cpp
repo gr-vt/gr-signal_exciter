@@ -41,16 +41,16 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
 
   float pulseshape[1] = {1.};
   if(mod_type == gr::signal_exciter::QAM){
-    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
+    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PSK){
-    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
+    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PAM){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
+    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::ASK){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
+    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
   }
   else{
     throw_runtime("Unknown Base Modulation Type, choose ('PSK','QAM','PAM','ASK').\n");
@@ -95,6 +95,8 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
 
   d_symbol_length = d_fftsize+d_cp_len;
 
+
+  printf("ofdm: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

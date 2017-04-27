@@ -78,6 +78,7 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
+  printf("psk: fso: %0.3e\n",fso);
   d_fso = fso;
   // Enable background threads for signal generation parallel processing.
   d_align = volk_get_alignment();

@@ -5,6 +5,7 @@
 #include <signal_exciter/signal_base.hpp>
 #include <signal_exciter/gmm_spectral_taps.h>
 #include <gnuradio/filter/fir_filter.h>
+#include <gnuradio/filter/firdes.h>
 #include <volk/volk.h>
 #include <fftw3.h>
 
@@ -50,6 +51,9 @@ class Signal_FM : public Signal_Base
     //volk things
     int d_align;
     float* d_filt_in;
+    complexf* d_time_shift_in;
+    gr::filter::kernel::fir_filter_ccf* d_frac_filt;
+    std::vector<complexf> d_frac_cache;
 
   public:
     Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
