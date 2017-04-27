@@ -5,7 +5,11 @@
 #include <stdexcept>
 #include <algorithm>
 
-Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps, int overlap, float mod_idx, int seed, double beta, float* phase_shape, size_t phase_shape_length, bool enable, size_t buff_size, size_t min_notify)
+Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
+                      int sps, int overlap, float mod_idx, int seed,
+                      double beta, float* phase_shape,
+                      size_t phase_shape_length, float fso, bool enable,
+                      size_t buff_size, size_t min_notify)
   : d_order(order),
     d_sps(sps),
     d_L(overlap),
@@ -29,7 +33,7 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps,
     if(!new_order) new_order = 1;
     else new_order = new_order*2;
   }
-  
+
   if(new_order != d_order){
     if(new_order > 0) d_order = new_order;
     else d_order = 2;
@@ -56,6 +60,8 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps,
   d_cpm_type = phase_type;
 
   //printf("CPM PHASE SHAPE\n");
+
+  d_fso = fso;
 
   load_firs();
 
@@ -305,4 +311,3 @@ Signal_CPM::throw_runtime(std::string err)
   //printf("Threads ended.\n");
   throw std::runtime_error(err.c_str());
 }
-

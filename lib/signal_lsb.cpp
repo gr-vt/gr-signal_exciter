@@ -3,8 +3,10 @@
 #include "signal_lsb.hpp"
 #include <stdio.h>//////////////////////////////////
 
-Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                        bool norm, bool enable, size_t buff_size, size_t min_notify)
+Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
+                      float* sigma, float* weight, float samp_rate,
+                      size_t tap_count, int seed, bool norm, float fso,
+                      bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
     d_enable(enable),
@@ -34,6 +36,8 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma
     }
   }
   d_first_pass = true;
+
+  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.

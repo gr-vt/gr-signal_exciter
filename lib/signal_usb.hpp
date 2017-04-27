@@ -56,13 +56,18 @@ class Signal_USB : public Signal_Base
 
     void auto_gen_GM();
 
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
     //volk things
     int d_align;
     float* d_filt_in;
 
   public:
-    Signal_USB(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                bool norm=false, bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_USB(float mod_idx, size_t components, float* mu, float* sigma,
+                float* weight, float samp_rate, size_t tap_count, int seed,
+                bool norm=false, float fso=0., bool enable=true,
+                size_t buff_size=8192, size_t min_notify=512);
     ~Signal_USB();
 
     void generate_signal(complexf* output, size_t sample_count);

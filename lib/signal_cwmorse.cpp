@@ -3,7 +3,9 @@
 #include "signal_cwmorse.hpp"
 #include <stdio.h>//////////////////////////////////
 
-Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute, bool base_word, int seed, bool enable, size_t buff_size, size_t min_notify)
+Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
+                            bool base_word, int seed, float fso, bool enable,
+                            size_t buff_size, size_t min_notify)
   : d_cpw(char_per_word),
     d_wpm(words_per_minute),
     d_word(base_word),
@@ -25,6 +27,8 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute, bool b
   d_rng = new gr::random(d_seed, 0, d_letter_count);
 
   d_first_pass = true;
+
+  d_fso = fso;
 
   if(d_enable){
     d_running = true;
@@ -209,8 +213,8 @@ Z: 11101110101
 
   d_char_end = std::vector<complexf>(3, complexf(0.,0.));
   d_word_end = std::vector<complexf>(7, complexf(0.,0.));
-  
-  
+
+
   //print_symbol_list();
 }
 
@@ -236,7 +240,7 @@ Signal_CWMORSE::print_symbol_list(void)
 }
 
 
-void 
+void
 Signal_CWMORSE::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size, d_notify_size);
@@ -244,7 +248,7 @@ Signal_CWMORSE::auto_fill_symbols()
   d_TGroup.create_thread( boost::bind(&Signal_CWMORSE::auto_gen_SYMS, this) );
 }
 
-void 
+void
 Signal_CWMORSE::auto_fill_signal()
 {}
 
@@ -307,7 +311,3 @@ Signal_CWMORSE::auto_gen_SYMS()
     buff_pnt = 0;
   }
 }
-
-
-
-

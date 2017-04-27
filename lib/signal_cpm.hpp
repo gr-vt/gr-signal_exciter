@@ -55,11 +55,18 @@ class Signal_CPM : public Signal_Base
     std::vector< std::vector<float> > d_taps;
     std::vector<gr::filter::kernel::fir_filter_fff *> d_firs;
 
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
     void load_firs();
     void filter( size_t nout, complexf* out );
 
   public:
-    Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps, int overlap, float mod_idx, int seed, double beta=0.3, float* phase_shape=NULL, size_t phase_shape_length=0, bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps,
+              int overlap, float mod_idx, int seed, double beta=0.3,
+              float* phase_shape=NULL, size_t phase_shape_length=0,
+              float fso=0., bool enable=true, size_t buff_size=8192,
+              size_t min_notify=512);
     ~Signal_CPM();
 
     void generate_signal(complexf* output, size_t sample_count);

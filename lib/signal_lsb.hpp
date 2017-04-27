@@ -54,6 +54,9 @@ class Signal_LSB : public Signal_Base
 
     boost::thread_group d_TGroup;
 
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
     void auto_gen_GM();
 
     //volk things
@@ -61,8 +64,10 @@ class Signal_LSB : public Signal_Base
     float* d_filt_in;
 
   public:
-    Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                bool norm=false, bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma,
+                float* weight, float samp_rate, size_t tap_count, int seed,
+                bool norm=false, float fso=0., bool enable=true,
+                size_t buff_size=8192, size_t min_notify=512);
     ~Signal_LSB();
 
     void generate_signal(complexf* output, size_t sample_count);

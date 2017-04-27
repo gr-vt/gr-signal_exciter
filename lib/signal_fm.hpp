@@ -44,13 +44,18 @@ class Signal_FM : public Signal_Base
 
     void auto_gen_GM();
 
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
     //volk things
     int d_align;
     float* d_filt_in;
 
   public:
-    Signal_FM(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
+              float* weight, float samp_rate, size_t tap_count, int seed,
+              float fso=0., bool enable=true, size_t buff_size=8192,
+              size_t min_notify=512);
     ~Signal_FM();
 
     void generate_signal(complexf* output, size_t sample_count);

@@ -3,8 +3,9 @@
 #include "signal_fm.hpp"
 #include <stdio.h>//////////////////////////////////
 
-Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma, float* weight, float samp_rate, size_t tap_count, int seed,
-                      bool enable, size_t buff_size, size_t min_notify)
+Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
+                    float* weight, float samp_rate, size_t tap_count, int seed,
+                    float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
     d_cum(0.),
@@ -25,6 +26,8 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma, 
     auto_fill_signal();
   }
   d_first_pass = true;
+
+  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -160,16 +163,16 @@ Signal_FM::load_fir()
   d_fir->set_taps(d_taps);
 }
 
-void 
+void
 Signal_FM::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size,d_notify_size);
-  
+
   d_TGroup.create_thread( boost::bind(&Signal_FM::auto_gen_GM, this) );
-  
+
 }
 
-void 
+void
 Signal_FM::auto_fill_signal()
 {}
 
@@ -192,9 +195,3 @@ Signal_FM::auto_gen_GM()
     buff_pnt = 0;
   }
 }
-
-
-
-
-
- 
