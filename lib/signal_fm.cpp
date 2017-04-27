@@ -28,7 +28,6 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
   d_first_pass = true;
 
 
-  printf("fm: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

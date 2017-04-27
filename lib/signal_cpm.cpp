@@ -62,7 +62,6 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   //printf("CPM PHASE SHAPE\n");
 
 
-  printf("cpm: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

@@ -22,17 +22,16 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
   //printf("Seeded.\n");
   d_burn = buff_size;
 
-  d_rng = new gr::random(d_seed, 0, d_letter_count);
-
   d_first_pass = true;
 
 
-  printf("cwmorse: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();
 
   create_symbol_list();
+
+  d_rng = new gr::random(d_seed, 0, d_letter_count);
 
   if(d_enable){
     d_running = true;
@@ -116,7 +115,6 @@ void
 Signal_CWMORSE::generate_signal(complexf* output, size_t sample_count)
 {
   if(d_first_pass){
-
     //fso needs
     generate_symbols( &d_frac_cache[0], d_frac_cache.size() );
 
