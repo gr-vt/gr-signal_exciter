@@ -4,11 +4,11 @@
 #include <stdio.h>
 #include <stdexcept>
 
-Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame, 
+Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame,
                          bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
                          int mod_type, int mod_order, float mod_offset, int seed, bool add_sync,
                          float* symbol_taper, size_t sample_overlap, float* interp_taps, size_t tap_len, int interp,
-                         bool enable, size_t buff_size, size_t min_notify)
+                         float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
     d_active(active_carriers),
@@ -32,7 +32,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
 
   d_active_list = std::vector<size_t>(active_carriers,0);
   d_pilot_list = std::vector<size_t>(pilot_count,0);
-  
+
   for(size_t idx = 0; idx < pilot_count; idx++){
     d_pilot_list[idx] = pilot_locations[idx];
   }
@@ -93,10 +93,13 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
     d_taper = std::vector<float>(0);
   }
 
-  load_firs();
   d_symbol_length = d_fftsize+d_cp_len;
 
+  d_fso = fso;
+
   d_align = volk_get_alignment();
+
+  load_firs();
 
   if(d_enable){
     d_running = true;
@@ -149,7 +152,7 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
     //make a frame at a time
     d_frame = std::vector<complexf>(d_frame_length+d_samp_overlap, complexf(0.,0.));
     d_past = std::vector<complexf>(d_hist+d_samp_overlap,complexf(0.,0.));
-    
+
     //space for the individual ofdm symbols
     d_prefft_cache = std::vector<complexf>(d_fftsize, complexf(0.,0.));
     d_postfft_cache = std::vector<complexf>(d_fftsize, complexf(0.,0.));
@@ -352,11 +355,11 @@ Signal_OFDM::print_buffer_complex(std::string str, fftwf_complex* buff, size_t l
 
 
 
-void 
+void
 Signal_OFDM::auto_fill_symbols()
 {}
 
-void 
+void
 Signal_OFDM::auto_fill_signal()
 {}
 
@@ -368,7 +371,7 @@ Signal_OFDM::filter( size_t nout, complexf* out )
   size_t total_samps = d_past.size()*d_interp;
   size_t used_samps = d_branch_offset;//how many samples are used from total_samps
   size_t part_samps = (d_interp-(d_branch_offset%d_interp))%d_interp;//frac samps left of first symbol (part_samps/d_interp) < d_interp;
-  
+
   //subtract out the samples that went last time
   total_samps = total_samps - used_samps;
 
@@ -449,7 +452,7 @@ Signal_OFDM::filter( size_t nout, complexf* out )
     printf("OFDM - There isn't enough left in the buffer!!!\n");
   }
   d_past = std::vector<complexf>( &d_filt_in[ii], &d_filt_in[total_input_len] );
-  
+
   volk_free(d_filt_in);
 
 }
@@ -459,33 +462,41 @@ Signal_OFDM::load_firs()
 {
   //printf("OFDM::Attempting to load filters.\n");
   size_t intp = d_interp;
-  size_t ts = d_interp_taps.size() / intp;
-  if((d_interp_taps.size() % intp)){
-    ts++;
-  }
   //printf("OFDM:: Intp(%lu), ts(%lu), sps(%d), d_overlap(%lu).\n",intp,ts,d_sps,d_overlap);
+
+  d_firs = std::vector< gr::filter::kernel::fir_filter_ccf *>(intp);
+  std::vector<float> dummy_taps;
+  for(size_t idx = 0; idx < intp; idx++){
+    d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
+  }
+
+  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
+
+  memcpy( &d_proto_taps[0], &d_interp_taps[0],
+          d_interp_taps.size()*sizeof(float) );
+
+  if( d_proto_taps.size() % intp ){
+    throw_runtime("signal_qam: error setting pulse shaping taps.\n");
+  }
+
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
 
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);
 
-  //printf("OFDM:: taps_size(%lu).\n",d_taps.size());
-
+  size_t ts = shifted_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
-    memset( &d_taps[idx][0], 0., ts*sizeof(float) );
   }
   //printf("OFDM:: taps init 0.\n");
 
   for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_taps[idx % intp][idx / intp] = d_interp_taps[idx];
+    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
   }
   //printf("OFDM:: taps filled.\n");
 
-  d_firs = std::vector< gr::filter::kernel::fir_filter_ccf *>(intp);
-  std::vector<float> dummy_taps(1,0.);
-  for(size_t idx = 0; idx < intp; idx++){
-    d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
-  }
   //printf("OFDM:: filters made.\n");
   for(size_t idx = 0; idx < intp; idx++){
     d_firs[idx]->set_taps(d_taps[idx]);
@@ -587,10 +598,3 @@ Signal_OFDM::throw_runtime(std::string err)
   err_msg += err;
   throw std::runtime_error(err_msg.c_str());
 }
-
-
-
-
-
-
-

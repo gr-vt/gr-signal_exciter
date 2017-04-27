@@ -14,7 +14,7 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma
     d_norm(norm)
 {
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, samp_rate, tap_count);
   generate_taps();
 
@@ -133,7 +133,7 @@ Signal_LSB::filter( size_t nout, complexf* out )
   }
   d_past = std::vector<float>( &d_filt_in[ii], &d_filt_in[total_input_len] );
 
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_fft_in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*nout);
   d_fft_out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*nout);
   d_fft = fftwf_plan_dft_r2c_1d( nout, &d_fm[0], d_fft_in, FFTW_ESTIMATE );
@@ -214,16 +214,16 @@ Signal_LSB::do_ifft(size_t samp_count)
   }
 }
 
-void 
+void
 Signal_LSB::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size,d_notify_size);
-  
+
   d_TGroup.create_thread( boost::bind(&Signal_LSB::auto_gen_GM, this) );
-  
+
 }
 
-void 
+void
 Signal_LSB::auto_fill_signal()
 {}
 
@@ -247,7 +247,3 @@ Signal_LSB::auto_gen_GM()
     buff_pnt = 0;
   }
 }
-
-
-
-  

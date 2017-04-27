@@ -18,6 +18,10 @@ class Signal_PAM : public Signal_Base
     int d_sps;
     bool d_first_pass;
 
+    //fractional_symbol_offset
+    float d_fso;
+    std::vector<float> d_proto_taps;
+
     std::vector<complexf> d_symbol_list;
 
     std::vector<complexf> d_symbol_cache;
@@ -63,7 +67,7 @@ class Signal_PAM : public Signal_Base
 
   public:
     Signal_PAM(int order, float offset, int sps, float* pusle_shape, size_t length, int seed,
-                bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+                float fso=0., bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_PAM();
 
     void generate_signal(complexf* output, size_t sample_count);

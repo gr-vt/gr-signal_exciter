@@ -131,6 +131,11 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK',  'signal_exciter.OFDM')
+sig_params.frac_symb_offset = $fso
+#else
+sig_params.frac_symb_offset = 0.
+#end if
 self.$id = signal_exciter.random_signal(sig_params, $seed)
 </make>
 <!--pulse_shape_($id) = signal_exciter.floatArray($pulse_len)
@@ -702,6 +707,13 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
   all
 #end if
     </hide>
+  </param>
+  <param>
+    <name>Fractional Symbol Offset</name>
+    <key>fso</key>
+    <value>0.</value>
+    <type>real</type>
+    <hide>part</hide>
   </param>
   <param>
     <name>Seed</name>
