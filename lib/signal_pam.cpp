@@ -70,7 +70,6 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
   }
 
 
-  printf("pam: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();

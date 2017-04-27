@@ -96,7 +96,6 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
   d_symbol_length = d_fftsize+d_cp_len;
 
 
-  printf("ofdm: fso: %0.3e\n",fso);
   d_fso = fso;
 
   d_align = volk_get_alignment();
