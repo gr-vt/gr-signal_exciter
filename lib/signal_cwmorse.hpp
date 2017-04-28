@@ -61,14 +61,24 @@ class Signal_CWMORSE : public Signal_Base
 
     //volk things
     int d_align;
-    float* d_filt_in;
-    complexf* d_time_shift_in;
-    gr::filter::kernel::fir_filter_ccf* d_frac_filt;
-    std::vector<complexf> d_frac_cache;
+
+    // adding in interp option
+    size_t d_interp;
+    size_t d_branch_offset;
+    std::vector<float> d_interp_taps;
+    std::vector< gr::filter::kernel::fir_filter_ccf* > d_firs;
+    std::vector< std::vector<float> > d_taps;
+    std::vector<complexf> d_past;
+    size_t d_hist;
+    complexf* d_filt_in;
+
+    void load_firs();
+    void filter( size_t nout, complexf* out );
 
   public:
     Signal_CWMORSE(int d_char_per_word, float words_per_minute, bool base_word,
-                    int seed, float fso=0., bool enable=true,
+                    int seed, float* interp_taps=NULL, size_t tap_len=0,
+                    int interp=1, float fso=0., bool enable=true,
                     size_t buff_size=8192, size_t min_notify=512);
     ~Signal_CWMORSE();
 

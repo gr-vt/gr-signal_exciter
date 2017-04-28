@@ -78,8 +78,8 @@ for ii in range(#end raw $components#raw):#end raw
 #end raw
 sig_params.weight           = $wtid
 
-sig_params.fs               = $samp_rate
-sig_params.pulse_len        = $ntaps
+sig_params.fs               = 2.*$max_freq
+sig_params.spectral_len     = $ntaps
 sig_params.am_norm          = False
 #end if
 #if $mtype() in ('signal_exciter.OFDM',)
@@ -110,6 +110,8 @@ for ii in range(#end raw $samp_overlap#raw):#end raw
   $tpid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.taper            = $tpid
+#end if
+#if $mtype() in ('signal_exciter.OFDM','signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB','signal_exciter.CWMORSE')
 sig_params.sps              = $interp
 sig_params.pulse_len        = $interp_len
 
@@ -122,7 +124,8 @@ for ii in range(#end raw $interp_len#raw):#end raw
   $psid#raw [ii] = #end raw $temp#raw [ii]
 #end raw
 sig_params.pulse_shape      = $psid
-
+#end if
+#if $mtype() in ('signal_exciter.OFDM',)
 sig_params.backoff          = $backoff
 sig_params.add_sync         = $add_sync
 #end if
@@ -378,9 +381,9 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     </hide>
   </param>
   <param>
-    <name>Sample Rate</name>
-    <key>samp_rate</key>
-    <value>8e3</value>
+    <name>Max Frequency</name>
+    <key>max_freq</key>
+    <value>4e3</value>
     <type>float</type>
     <hide>
 #if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB')
@@ -648,7 +651,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.OFDM','signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB','signal_exciter.CWMORSE')
   none
 #else
   all
@@ -661,7 +664,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>[1]</value>
     <type>float_vector</type>
     <hide>
-#if $mtype() in ('signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.OFDM','signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB','signal_exciter.CWMORSE')
   none
 #else
   all
@@ -674,7 +677,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.OFDM','signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB','signal_exciter.CWMORSE')
   none
 #else
   all

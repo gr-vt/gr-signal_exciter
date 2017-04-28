@@ -50,6 +50,7 @@ namespace gr {
     {
       /*printf("Got to the creation\n");
       roundone = true;*/
+      //set_output_multiple(4);
 
       //printf("rs: fso: %1.3e\n",sig.frac_symb_offset);
       if((sig.frac_symb_offset > 0.5)||(sig.frac_symb_offset < -0.5)){
@@ -64,40 +65,45 @@ namespace gr {
         d_mod = new Signal_FM(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
                               &d_params.weight[0],d_params.fs,
-                              d_params.pulse_len,seed,
-                              d_params.frac_symb_offset);
+                              d_params.spectral_len,seed,
+                              &d_params.pulse_shape[0],d_params.pulse_len,
+                              d_params.sps,d_params.frac_symb_offset);
       }
       else if(mod_type == DSB){
         //d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_DSB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
                               &d_params.weight[0],d_params.fs,
-                              d_params.pulse_len,seed,d_params.am_norm,
-                              d_params.frac_symb_offset);
+                              d_params.spectral_len,seed,d_params.am_norm,
+                              &d_params.pulse_shape[0],d_params.pulse_len,
+                              d_params.sps,d_params.frac_symb_offset);
       }
       else if(mod_type == DSBSC){
         //d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.components,
                                 &d_params.mu[0],&d_params.sigma[0],
                                 &d_params.weight[0],d_params.fs,
-                                d_params.pulse_len,seed,d_params.am_norm,
-                                d_params.frac_symb_offset);
+                                d_params.spectral_len,seed,d_params.am_norm,
+                                &d_params.pulse_shape[0],d_params.pulse_len,
+                                d_params.sps,d_params.frac_symb_offset);
       }
       else if(mod_type == USB){
         //d_mod = new Signal_USB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_USB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
                               &d_params.weight[0],d_params.fs,
-                              d_params.pulse_len,seed,d_params.am_norm,
-                              d_params.frac_symb_offset);
+                              d_params.spectral_len,seed,d_params.am_norm,
+                              &d_params.pulse_shape[0],d_params.pulse_len,
+                              d_params.sps,d_params.frac_symb_offset);
       }
       else if(mod_type == LSB){
         //d_mod = new Signal_LSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_LSB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
                               &d_params.weight[0],d_params.fs,
-                              d_params.pulse_len,seed,d_params.am_norm,
-                              d_params.frac_symb_offset);
+                              d_params.spectral_len,seed,d_params.am_norm,
+                              &d_params.pulse_shape[0],d_params.pulse_len,
+                              d_params.sps,d_params.frac_symb_offset);
       }
       else if(mod_type == PSK){
         //printf("rs: psk: fso: %1.3e\n",d_params.frac_symb_offset);
@@ -134,6 +140,8 @@ namespace gr {
         d_mod = new Signal_CWMORSE(d_params.char_per_word,
                                   d_params.words_per_minute,
                                   d_params.base_word,seed,
+                                  &d_params.pulse_shape[0],
+                                  d_params.pulse_len,d_params.sps,
                                   d_params.frac_symb_offset);
       }
       else if(mod_type == MSK){

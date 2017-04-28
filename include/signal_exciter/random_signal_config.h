@@ -68,6 +68,7 @@ namespace gr {
       float rnd_gate_off_max;               // RG maximum off duration
       float rnd_gate_on_min;                // RG minimum on duration
       float rnd_gate_on_max;                // RG maximum on duartion
+      float frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
       // Unique to signal sets
       sig_type_t mod;                       // Base signal type (OFDM)
       int order;                            // Digital Modulation Order
@@ -108,8 +109,9 @@ namespace gr {
       std::vector<float> sigma;             // std of each spectral guassian component (analog mods)
       std::vector<float> weight;            // weights of each spectral guassian component (analog mods)
       size_t components;                    // number of spectral guassian components (analog mods)
+      size_t spectral_len;                  // number of points/taps in the spectral tap generation
 
-      double frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
+
     };
 
   } // namespace signal_exciter

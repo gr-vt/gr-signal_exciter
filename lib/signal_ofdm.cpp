@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <stdexcept>
 
-Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame,
-                         bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
-                         int mod_type, int mod_order, float mod_offset, int seed, bool add_sync,
-                         float* symbol_taper, size_t sample_overlap, float* interp_taps, size_t tap_len, int interp,
-                         float fso, bool enable, size_t buff_size, size_t min_notify)
+Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
+                         size_t syms_per_frame, bool pilot_per_frame,
+                         size_t pilot_count, size_t* pilot_locations,
+                         float backoff, int mod_type, int mod_order,
+                         float mod_offset, int seed, bool add_sync,
+                         float* symbol_taper, size_t sample_overlap,
+                         float* interp_taps, size_t tap_len, int interp,
+                         float fso, bool enable, size_t buff_size,
+                         size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
     d_active(active_carriers),
@@ -68,7 +72,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
   d_sym_counter = 0;
   items_written = 0;
 
-  if(tap_len==0){
+  if(tap_len){
     d_interp_taps = std::vector<float>(1,1.);
   }
   else{
@@ -478,7 +482,7 @@ Signal_OFDM::load_firs()
           d_interp_taps.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
-    throw_runtime("signal_qam: error setting pulse shaping taps.\n");
+    throw_runtime("signal_ofdm: error setting interp taps.\n");
   }
 
   std::vector<float> shifted_taps;
