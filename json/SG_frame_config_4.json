@@ -1,0 +1,25 @@
+{
+  "Description" : "Configure file for Wideband Test",
+  "System Bandwidth" : 20e6,
+  "Center Frequency" : 0.0,
+  "Number of Signals" : 1,
+  "Run Time" : 0.05,
+  "Output File" : "something.fc32",
+
+  "Signal 1" : {
+    "Center Frequency" : 0.0,
+    "Generation Sample Rate" : 20e6,
+    "Gain" : 0.0,
+    "Fractional Symbol Offset" : 0.0,
+    "Modulation Type" : "QAM",
+    "Modulation Order" : 16,
+    "Phase Offset" : 0.0,
+    "Samples Per Symbol" : 2,
+    "Pulse Shape Taps" : [ 0.0019,  0.0053, -0.0082,  0.0014,
+                           0.0068, -0.0180,  0.0181,  0.0404,
+                          -0.0956, -0.0599,  0.4298,  0.7748,
+                           0.4298, -0.0599, -0.0956,  0.0404,
+                           0.0181, -0.0180,  0.0068,  0.0014,
+                          -0.0082,  0.0053]
+  }
+}

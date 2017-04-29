@@ -58,6 +58,7 @@ set(Boost_ADDITIONAL_VERSIONS
 find_package(Boost "1.45" COMPONENTS filesystem system random)
 
 if(NOT Boost_FOUND)
+    message(STATUS "Boost compiled libraries needed: filesystem, system, random")
     message(FATAL_ERROR "Boost required to compile signal_exciter")
 endif()
 

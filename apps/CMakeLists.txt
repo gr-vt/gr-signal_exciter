@@ -23,15 +23,16 @@ include_directories(${CMAKE_INSTALL_PREFIX}/include/)
 link_directories(${CMAKE_INSTALL_PREFIX}/lib/)
 
 add_executable(Signal_Exciter_File Signal_Exciter_File.cpp)
-target_link_libraries(Signal_Exciter_File 
-	${GNURADIO_RUNTIME_LIBRARIES} ${GNURADIO_BLOCKS_LIBRARIES} 
-	${GNURADIO_FILTER_LIBRARIES} ${GNURADIO_DIGITAL_LIBRARIES} 
-	${GNURADIO_CHANNELS_LIBRARIES} 
+target_link_libraries(Signal_Exciter_File
+	${GNURADIO_RUNTIME_LIBRARIES} ${GNURADIO_BLOCKS_LIBRARIES}
+	${GNURADIO_FILTER_LIBRARIES} ${GNURADIO_DIGITAL_LIBRARIES}
+	${GNURADIO_CHANNELS_LIBRARIES}
 	gnuradio-signal_exciter ${Boost_LIBRARIES} fftw3 fftw3f config)
 
 include(GrPython)
 
 install(
     TARGETS
+    Signal_Exciter_File
     DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
