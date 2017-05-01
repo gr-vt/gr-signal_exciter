@@ -12,7 +12,7 @@ Installation has been tested on Ubuntu 14.04 and 16.04 successfully.
 
 To install using pybombs you must of the gr-etcetra recipe directory available. As of writing (5/1/17) the updates to gr-etcetra recipes have not been merged into master, but are located within this repo in the directory 'recipes.'
 
-With the recipes installed run
+With the recipes installed run (swap 'prefix' for your pybombs prefix)
   ```
   $ pybombs -p prefix install gr-signal_exciter
   ```
