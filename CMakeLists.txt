@@ -58,6 +58,7 @@ set(Boost_ADDITIONAL_VERSIONS
 find_package(Boost "1.45" COMPONENTS filesystem system random)
 
 if(NOT Boost_FOUND)
+    message(STATUS "Boost compiled libraries needed: filesystem, system, random")
     message(FATAL_ERROR "Boost required to compile signal_exciter")
 endif()
 
@@ -108,7 +109,7 @@ find_package(Doxygen)
 # components required to the list of GR_REQUIRED_COMPONENTS (in all
 # caps such as FILTER or FFT) and change the version to the minimum
 # API compatible version required.
-set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS DIGITAL ANALOG FILTER UHD CHANNELS)
+set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS FILTER DIGITAL ANALOG CHANNELS UHD)
 find_package(Gnuradio "3.7.2" REQUIRED)
 
 if(NOT CPPUNIT_FOUND)

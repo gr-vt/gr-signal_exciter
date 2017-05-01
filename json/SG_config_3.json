@@ -1,0 +1,62 @@
+//Configure file for LDAPM Test w/ overlap
+{
+  "System Bandwidth" : 20e6,
+  "Center Frequency" : 0.0,
+  "Number of Signals" : 3,
+  "Run Time" : 0.0002048,
+  "Output File" : "something.fc32",
+
+  "Signals" : [
+    {
+      "ID" : 0,
+      "Center Frequency" : 0.0,
+      "Generation Sample Rate" : 6e6,
+      "Gain" : -20.0,
+      "Fractional Symbol Offset" : 0.0,
+      "Modulation Type" : "PSK",
+      "Modulation Order" : 4,
+      "Phase Offset" : 0.0,
+      "Samples per Symbol" : 2,
+      "Pulse Shape Taps" : [ 0.0019,  0.0053, -0.0082,  0.0014,
+                             0.0068, -0.0180,  0.0181,  0.0404,
+                            -0.0956, -0.0599,  0.4298,  0.7748,
+                             0.4298, -0.0599, -0.0956,  0.0404,
+                             0.0181, -0.0180,  0.0068,  0.0014,
+                            -0.0082,  0.0053]
+    },
+    {
+      "ID" : 1,
+      "Center Frequency" : 0.0,
+      "Generation Sample Rate" : 100e3,
+      "Gain" : 5.0,
+      "Fractional Symbol Offset" : 0.0,
+      "Modulation Type" : "QAM",
+      "Modulation Order" : 16,
+      "Phase Offset" : 0.0,
+      "Samples per Symbol" : 2,
+      "Pulse Shape Taps" : [ 0.0019,  0.0053, -0.0082,  0.0014,
+                             0.0068, -0.0180,  0.0181,  0.0404,
+                            -0.0956, -0.0599,  0.4298,  0.7748,
+                             0.4298, -0.0599, -0.0956,  0.0404,
+                             0.0181, -0.0180,  0.0068,  0.0014,
+                            -0.0082,  0.0053]
+    },
+    {
+      "ID" : 2,
+      "Center Frequency" : 5e6,
+      "Generation Sample Rate" : 6e6,
+      "Gain" : 0.0,
+      "Fractional Symbol Offset" : 0.0,
+      "Modulation Type" : "PAM",
+      "Modulation Order" : 4,
+      "Phase Offset" : 0.0,
+      "Samples per Symbol" : 2,
+      "Pulse Shape Taps" : [ 0.0019,  0.0053, -0.0082,  0.0014,
+                             0.0068, -0.0180,  0.0181,  0.0404,
+                            -0.0956, -0.0599,  0.4298,  0.7748,
+                             0.4298, -0.0599, -0.0956,  0.0404,
+                             0.0181, -0.0180,  0.0068,  0.0014,
+                            -0.0082,  0.0053]
+    }
+  ]
+}

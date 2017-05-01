@@ -4,7 +4,8 @@
 #include <stdio.h>//////////////////////////////////
 
 Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
-                            bool base_word, int seed, float fso, bool enable,
+                            bool base_word, int seed, float* interp_taps,
+                            size_t tap_len, int interp, float fso, bool enable,
                             size_t buff_size, size_t min_notify)
   : d_cpw(char_per_word),
     d_wpm(words_per_minute),
@@ -14,6 +15,8 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
     d_samp_offset(0),
     d_state(0),
     d_protected(0),
+    d_interp(interp),
+    d_branch_offset(0),
     d_enable(enable),
     d_buffer_size(buff_size)
 {
@@ -24,11 +27,29 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
 
   d_first_pass = true;
 
+  if(tap_len){
+    double power_check = 0.;
+    d_interp_taps = std::vector<float>(tap_len);
+    for(size_t idx = 0; idx < tap_len; idx++){
+      d_interp_taps[idx] = interp_taps[idx];
+      power_check += interp_taps[idx]*interp_taps[idx];
+    }
+    double normalizer = sqrt(double(interp)/power_check);
+    for(size_t idx = 0; idx < tap_len; idx++){
+      d_interp_taps[idx] *= normalizer;
+    }
+  }
+  else{
+    d_interp = 1;
+    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
+                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+  }
 
   d_fso = fso;
 
   d_align = volk_get_alignment();
 
+  load_firs();
   create_symbol_list();
 
   d_rng = new gr::random(d_seed, 0, d_letter_count);
@@ -48,7 +69,9 @@ Signal_CWMORSE::~Signal_CWMORSE()
     delete d_Sy;
   }
   delete d_rng;
-  delete d_frac_filt;
+  for(size_t idx = 0; idx < d_interp; idx++){
+    delete d_firs[idx];
+  }
 }
 
 void
@@ -115,23 +138,54 @@ void
 Signal_CWMORSE::generate_signal(complexf* output, size_t sample_count)
 {
   if(d_first_pass){
-    //fso needs
-    generate_symbols( &d_frac_cache[0], d_frac_cache.size() );
-
+    d_past = std::vector<complexf>(d_hist);
+    generate_symbols( &d_past[0], d_past.size() );
     d_first_pass = false;
   }
+  filter( sample_count, output );
 
-  d_time_shift_in = (complexf *) volk_malloc(
-                      (sample_count+d_frac_cache.size())*sizeof(complexf),
-                      d_align);
-  memcpy( &d_time_shift_in[0], &d_frac_cache[0],
-          d_frac_cache.size()*sizeof(complexf) );
-  generate_symbols( &d_time_shift_in[d_frac_cache.size()], sample_count );
-  d_frac_filt->filterN( &output[0], &d_time_shift_in[0], sample_count );
-  memcpy( &d_frac_cache[0], &d_time_shift_in[sample_count],
-          d_frac_cache.size()*sizeof(complexf) );
-  volk_free(d_time_shift_in);
+}
 
+void
+Signal_CWMORSE::filter( size_t nout, complexf* out )
+{
+  size_t total_samps = d_past.size()*d_interp;
+  size_t used_samps = d_branch_offset;
+  size_t part_samps = (d_interp-(d_branch_offset%d_interp))%d_interp;
+
+  total_samps -= used_samps;
+  total_samps -= d_hist*d_interp;
+
+  size_t samps_needed;
+  if(nout < total_samps){
+    samps_needed = 0;
+  }
+  else{
+    samps_needed = nout - total_samps;
+  }
+  float fractional_N = float(samps_needed);
+  float fractional_D = float(d_interp);
+  float fractional = fractional_N/fractional_D;
+  size_t symbs_needed = ceil(fractional);
+
+  size_t total_input_len = symbs_needed + d_past.size();
+
+  d_filt_in = (complexf*)volk_malloc( total_input_len*sizeof(complexf), d_align);
+  memcpy( &d_filt_in[0], &d_past[0], d_past.size()*sizeof(complexf) );
+  generate_symbols( &d_filt_in[d_past.size()], symbs_needed );
+
+  size_t oo(0),ii(0);
+  while( oo < nout ){
+    out[oo] = d_firs[d_branch_offset]->filter( &d_filt_in[ii] );
+    d_branch_offset = (d_branch_offset+1)%d_interp;
+    if(!d_branch_offset){
+      ii++;
+    }
+    oo++;
+  }
+  size_t remaining = total_input_len - ii;
+  d_past = std::vector<complexf>( &d_filt_in[ii], &d_filt_in[total_input_len] );
+  volk_free(d_filt_in);
 }
 
 
@@ -237,15 +291,6 @@ Z: 11101110101
 
 
   //print_symbol_list();
-
-  std::vector<float> dummy_taps;
-  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
-  d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_fso);
-  d_frac_filt->set_taps(shifted_taps);
-  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }
 
 void
@@ -267,6 +312,49 @@ Signal_CWMORSE::print_symbol_list(void)
   }
   printf("char end:\t0, 0, 0\n");
   printf("word end:\t0, 0, 0, 0, 0, 0, 0\n");
+}
+
+void
+Signal_CWMORSE::load_firs()
+{
+  size_t intp = d_interp;
+
+  d_firs = std::vector< gr::filter::kernel::fir_filter_ccf *>(intp);
+  std::vector<float> dummy_taps;
+  for(size_t idx = 0; idx < intp; idx++){
+    d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
+  }
+
+  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
+
+  memcpy( &d_proto_taps[0], &d_interp_taps[0],
+          d_interp_taps.size()*sizeof(float) );
+
+
+  std::vector<float> shifted_taps;
+  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+
+  //std::vector< std::vector<float> > xtaps(intp);
+  d_taps = std::vector< std::vector<float> >(intp);
+
+  size_t ts = shifted_taps.size() / intp;
+  for(size_t idx = 0; idx < intp; idx++){
+    d_taps[idx].resize(ts);
+  }
+  //printf("OFDM:: taps init 0.\n");
+
+  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
+  }
+  //printf("OFDM:: taps filled.\n");
+
+  //printf("OFDM:: filters made.\n");
+  for(size_t idx = 0; idx < intp; idx++){
+    d_firs[idx]->set_taps(d_taps[idx]);
+  }
+  //printf("OFDM:: taps loaded.\n");
+  d_hist = ts-1;
 }
 
 

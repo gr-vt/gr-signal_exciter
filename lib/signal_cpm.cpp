@@ -59,6 +59,20 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   }
   d_cpm_type = phase_type;
 
+  float weighting = 0.;
+  for(size_t idx = 0; idx < d_phase_shape.size(); idx++){
+    weighting += d_phase_shape[idx];
+  }
+  if(weighting){
+    weighting = 1./weighting;
+  }
+  else{
+    weighting = 1.;
+  }
+  for(size_t idx = 0; idx < d_phase_shape.size(); idx++){
+    d_phase_shape[idx] *= weighting;
+  }
+
   //printf("CPM PHASE SHAPE\n");
 
 

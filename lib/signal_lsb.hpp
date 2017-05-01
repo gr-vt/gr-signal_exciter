@@ -25,7 +25,7 @@ class Signal_LSB : public Signal_Base
     void generate_taps();
 
     gr::filter::kernel::fir_filter_fff* d_fir;
-    void load_fir();
+    void load_firs();
     size_t d_hist;
     std::vector<float> d_past;
     void filter( size_t nout, complexf* output );
@@ -63,14 +63,22 @@ class Signal_LSB : public Signal_Base
     //volk things
     int d_align;
     float* d_filt_in;
-    complexf* d_time_shift_in;
-    gr::filter::kernel::fir_filter_ccf* d_frac_filt;
-    std::vector<complexf> d_frac_cache;
+
+    // adding in interp option
+    size_t d_interp;
+    size_t d_branch_offset;
+    std::vector<float> d_interp_taps;
+    std::vector< gr::filter::kernel::fir_filter_ccf* > d_firs;
+    std::vector< std::vector<float> > d_xtaps;
+    std::vector<complexf> d_past2;
+    size_t d_hist2;
+    complexf* d_filt_in2;
 
   public:
     Signal_LSB(float mod_idx, size_t components, float* mu, float* sigma,
-                float* weight, float samp_rate, size_t tap_count, int seed,
-                bool norm=false, float fso=0., bool enable=true,
+                float* weight, float max_freq, size_t tap_count, int seed,
+                bool norm=false, float* interp_taps=NULL, size_t tap_len=0,
+                int interp=1, float fso=0., bool enable=true,
                 size_t buff_size=8192, size_t min_notify=512);
     ~Signal_LSB();
 

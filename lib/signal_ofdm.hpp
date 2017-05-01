@@ -7,6 +7,7 @@
 #include "signal_qam.hpp"
 #include "signal_pam.hpp"
 #include <fftw3.h>
+#include <gnuradio/filter/firdes.h>
 #include <gnuradio/filter/fir_filter.h>
 #include <volk/volk.h>
 
@@ -93,7 +94,7 @@ class Signal_OFDM : public Signal_Base
     complexf* d_filt_in;
 
     void load_firs();
-    void filter( size_t nout, complexf* out);
+    void filter( size_t nout, complexf* out );
 
     void generate_frame();
     std::vector<complexf> d_frame;
@@ -108,11 +109,14 @@ class Signal_OFDM : public Signal_Base
     void throw_runtime(std::string err);
 
   public:
-    Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame,
-                bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
-                int mod_type, int mod_order, float mod_offset, int seed, bool add_sync=false,
-                float* symbol_taper=NULL, size_t sample_overlap=0, float* interp_taps=NULL, size_t tap_len=0, int interp=1,
-                float fso=0., bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
+                size_t syms_per_frame, bool pilot_per_frame,
+                size_t pilot_count, size_t* pilot_locations, float backoff,
+                int mod_type, int mod_order, float mod_offset, int seed,
+                bool add_sync=false, float* symbol_taper=NULL,
+                size_t sample_overlap=0, float* interp_taps=NULL,
+                size_t tap_len=0, int interp=1, float fso=0.,
+                bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_OFDM();
 
     void generate_signal(complexf* output, size_t sample_count);

@@ -4,11 +4,15 @@
 #include <stdio.h>
 #include <stdexcept>
 
-Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, size_t syms_per_frame,
-                         bool pilot_per_frame, size_t pilot_count, size_t* pilot_locations, float backoff,
-                         int mod_type, int mod_order, float mod_offset, int seed, bool add_sync,
-                         float* symbol_taper, size_t sample_overlap, float* interp_taps, size_t tap_len, int interp,
-                         float fso, bool enable, size_t buff_size, size_t min_notify)
+Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
+                         size_t syms_per_frame, bool pilot_per_frame,
+                         size_t pilot_count, size_t* pilot_locations,
+                         float backoff, int mod_type, int mod_order,
+                         float mod_offset, int seed, bool add_sync,
+                         float* symbol_taper, size_t sample_overlap,
+                         float* interp_taps, size_t tap_len, int interp,
+                         float fso, bool enable, size_t buff_size,
+                         size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
     d_active(active_carriers),
@@ -68,10 +72,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
   d_sym_counter = 0;
   items_written = 0;
 
-  if(tap_len==0){
-    d_interp_taps = std::vector<float>(1,1.);
-  }
-  else{
+  if(tap_len){
     double power_check = 0.;
     d_interp_taps = std::vector<float>(tap_len);
     for(size_t idx = 0; idx < tap_len; idx++){
@@ -82,6 +83,11 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers, 
     for(size_t idx = 0; idx < tap_len; idx++){
       d_interp_taps[idx] *= normalizer;
     }
+  }
+  else{
+    d_interp = 1;
+    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
+                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
   }
   if(d_samp_overlap){
     d_taper = std::vector<float>(d_samp_overlap);
@@ -139,7 +145,6 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
 {
   size_t oo(0);
   d_samp_gen_count++;
-
   if(d_first_pass){
     if(d_sync){
       //if using a 'sync' then increment the symbols per frame to accomodate
@@ -149,7 +154,6 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
     d_frame_length = d_spf*(d_symbol_length);
     float frame_counter = float(d_hist)/float(d_frame_length);
     d_frames_needed = ceil(frame_counter);
-
     //make a frame at a time
     d_frame = std::vector<complexf>(d_frame_length+d_samp_overlap, complexf(0.,0.));
     d_past = std::vector<complexf>(d_hist+d_samp_overlap,complexf(0.,0.));
@@ -258,7 +262,6 @@ Signal_OFDM::generate_signal(complexf* output, size_t sample_count)
     }
 
     //print_buffer_complexf("Prehistory", &d_past[0], d_past.size());
-
     d_first_pass = false;
   }
 
@@ -478,7 +481,7 @@ Signal_OFDM::load_firs()
           d_interp_taps.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
-    throw_runtime("signal_qam: error setting pulse shaping taps.\n");
+    throw_runtime("signal_ofdm: error setting interp taps.\n");
   }
 
   std::vector<float> shifted_taps;

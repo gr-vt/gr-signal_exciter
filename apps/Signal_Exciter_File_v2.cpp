@@ -2,19 +2,19 @@
 //# GNU Radio C++ Module
 //# Title: Signal Exciter File
 //#################################################################
-/* 
+/*
  * Copyright 2016 Bill Clark.
- * 
+ *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3, or (at your option)
  * any later version.
- * 
+ *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this software; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 51 Franklin Street,
@@ -31,9 +31,8 @@
 #include <exception>
 #include <vector>
 #include <algorithm>
-#include <stdio.h>
-#include <math.h>
-#include <libconfig.h>
+#include <cstdio>
+#include <cmath>
 
 // GNU Radio Includes
 #include <gnuradio/top_block.h>
@@ -60,6 +59,7 @@
 #include <gnuradio/analog/sig_source_c.h>
 
 // OOTM Includes
+//#include <signal_exciter/json_parser.hpp>
 #include <signal_exciter/random_signal_config.h>
 #include <signal_exciter/random_signal.h>
 #include <signal_exciter/one_pass_gate.h>
@@ -69,6 +69,10 @@
 // Boost Includes
 #include <boost/math/special_functions/bessel.hpp>
 #include <boost/math/special_functions/sinc.hpp>
+
+// JSON Includes
+#include "json_parser.hpp"
+#include <jsoncpp/json/json.h>
 
 std::vector<float> gen_arb_interp_taps(double rate);
 std::vector<float> gen_int_interp_taps(double rate);
@@ -124,843 +128,36 @@ struct system_var
 };
 
 
-int parse_config(std::string config_file, system_var* system_container, gr::signal_exciter::sig_params* signal_container, size_t max_signals=SIGNAL_MAX)
+int parse_config(std::string config_file, system_var* system_container,
+        std::vector<gr::signal_exciter::sig_params> &signal_container,
+        size_t max_signals=SIGNAL_MAX)
 {
-  config_t cfg, *cfp;
-
-  cfp = &cfg;
-  config_init(cfp);
-
-  if(!config_read_file(cfp, config_file.c_str())){
-    fprintf(stderr, "Failed to read the config file: %s\n",config_file.c_str());
-    config_destroy(cfp);
-    return 1;
+  signal_exciter::json::System_Parameters parser(config_file);
+  if(parser.Load_File()){
+    bool good_load = true;
+    Pprintf("PARSER LOADED %s",size_t(154),"!");
+    system_container->EnableNoise = parser.get_noise_enabled();
+    system_container->SysBW = parser.get_system_bandwidth();
+    system_container->CenterFreq = parser.get_system_center();
+    system_container->RunTime = parser.get_run_time();
+    system_container->NoiseFloor = parser.get_noise_floor();
+    system_container->Seed = parser.get_seed();
+    system_container->NumSignals = parser.get_signal_count();
+    system_container->outputFile = "something.fc32";
+    signal_container = std::vector<gr::signal_exciter::sig_params>(system_container->NumSignals);
+    for(size_t idx = 0; idx < signal_container.size(); idx++){
+      if(!parser.get_signal_parameters(signal_container[idx],idx)){
+        good_load = false;
+      }
+    }
+    return !good_load;
   }
-
-  // Check for the seed value
-  if(!config_lookup_int(cfp, "Seed", &(*system_container).Seed)){
-    //Failed to find keyword
-    system_container->Seed = -1;
-  }
-  Pprintf("Seed: %d", size_t(75),system_container->Seed);
-
-  // Check for the number of signals to expect
-  if(!config_lookup_int(cfp, "Nsignals", &(*system_container).NumSignals)){
-    //Failed to find keyword
-    system_container->NumSignals = 0;
-  }
-  Pprintf("Nsignals: %d", size_t(75),system_container->NumSignals);
-  if(system_container->NumSignals > max_signals){
-    config_destroy(cfp);
-    fprintf(stderr, "The config file requests more signals than allowed.\n\tRemake with higher allowance, or cut back on the number of signals.\n");
-    return 1;
-  }
-
-  // Check for the center frequency to be emulated at
-  if(!config_lookup_float(cfp, "CenterFreq", &(*system_container).CenterFreq)){
-    //Failed to find keyword
-    system_container->CenterFreq = 0;
-  }
-  Pprintf("CenterFreq: %1.3e", size_t(75),system_container->CenterFreq);
-  // Check for the system bandwidth to operate at
-  if(!config_lookup_float(cfp, "SysBW", &(*system_container).SysBW)){
-    //Failed to find keyword
-    system_container->SysBW = 0;
-  }
-  Pprintf("SysBW: %1.3e", size_t(75),system_container->SysBW);
-  // Check for how long the file should be in seconds
-  if(!config_lookup_float(cfp, "RunTime", &(*system_container).RunTime)){
-    //Failed to find keyword
-    system_container->RunTime = 0;
-  }
-  Pprintf("RunTime: %1.3e", size_t(75),system_container->RunTime);
-  // Check for the noise floor level in dBm/Hz
-  if(!config_lookup_float(cfp, "NoiseFloor", &(*system_container).NoiseFloor)){
-    //Failed to find keyword
-    system_container->NoiseFloor = -100.;
-  }
-  Pprintf("NoiseFloor: %1.3e", size_t(75),system_container->NoiseFloor);
-
-  // Check if noise should be added to the file
-  int EnableNoise;
-  if(!config_lookup_bool(cfp, "NoiseEnable", &EnableNoise)){
-    //Failed to find keyword
-    system_container->EnableNoise = false;
-  }
-  else{
-    //Found Keyword
-    system_container->EnableNoise = EnableNoise;
-  }
-  Pprintf("NoiseEnable: %d", size_t(75),system_container->EnableNoise);
-
-  // Check for the output file name
-  const char* outputFile;
-  if(!config_lookup_string(cfp, "outfile", &outputFile)){
-    //Failed to find keyword
-    system_container->outputFile = "SignalExciterGenerated.fc32";
-  }
-  else{
-    //Found Keyword
-    system_container->outputFile = outputFile;
-  }
-  Pprintf("outfile: %s", size_t(75),system_container->outputFile.c_str());
-
-
-  for(int sig = 1; sig <= system_container->NumSignals; sig++){
-    char signum[15];
-    sprintf(signum, "sig%d", sig);
-    const char* signumber = signum;
-
-    char str[50];
-
-    // Checking the modulation type
-    strcpy(str,signumber);
-    strcat(str,".type");
-    const char* type;
-    if(!config_lookup_string(cfp, str, &type)){
-      //Failed to find keyword
-      signal_container[sig-1].type = gr::signal_exciter::PSK;
-    }
-    else{
-      //Found Keyword
-      std::string type_lower = type;
-      std::transform( type_lower.begin(), type_lower.end(), type_lower.begin(), ::tolower );
-      if(strcmp(type_lower.c_str(),"psk")==0){
-        signal_container[sig-1].type = gr::signal_exciter::PSK;
-      }
-      else if(strcmp(type_lower.c_str(),"qam")==0){
-        signal_container[sig-1].type = gr::signal_exciter::QAM;
-      }
-      else if(strcmp(type_lower.c_str(),"pam")==0){
-        signal_container[sig-1].type = gr::signal_exciter::PAM;
-      }
-      else if(strcmp(type_lower.c_str(),"ask")==0){
-        signal_container[sig-1].type = gr::signal_exciter::ASK;
-      }
-      else if(strcmp(type_lower.c_str(),"fsk")==0){
-        signal_container[sig-1].type = gr::signal_exciter::FSK;
-      }
-      else if(strcmp(type_lower.c_str(),"cwmorse")==0){
-        signal_container[sig-1].type = gr::signal_exciter::CWMORSE;
-      }
-      else if(strcmp(type_lower.c_str(),"dsb")==0){
-        signal_container[sig-1].type = gr::signal_exciter::DSB;
-        signal_container[sig-1].am_norm = true;
-      }
-      else if(strcmp(type_lower.c_str(),"dsbsc")==0){
-        signal_container[sig-1].type = gr::signal_exciter::DSBSC;
-        signal_container[sig-1].am_norm = true;
-      }
-      else if(strcmp(type_lower.c_str(),"usb")==0){
-        signal_container[sig-1].type = gr::signal_exciter::USB;
-        signal_container[sig-1].am_norm = true;
-      }
-      else if(strcmp(type_lower.c_str(),"lsb")==0){
-        signal_container[sig-1].type = gr::signal_exciter::LSB;
-        signal_container[sig-1].am_norm = true;
-      }
-      else if(strcmp(type_lower.c_str(),"fm")==0){
-        signal_container[sig-1].type = gr::signal_exciter::FM;
-      }
-      else if(strcmp(type_lower.c_str(),"cpm")==0){
-        signal_container[sig-1].type = gr::signal_exciter::CPM;
-      }
-      else if(strcmp(type_lower.c_str(),"gmsk")==0){
-        signal_container[sig-1].type = gr::signal_exciter::GMSK;
-      }
-      else if(strcmp(type_lower.c_str(),"msk")==0){
-        signal_container[sig-1].type = gr::signal_exciter::MSK;
-      }
-      else if(strcmp(type_lower.c_str(),"gfsk")==0){
-        signal_container[sig-1].type = gr::signal_exciter::GFSK;
-      }
-      else if(strcmp(type_lower.c_str(),"ofdm")==0){
-        signal_container[sig-1].type = gr::signal_exciter::OFDM;
-      }
-      else{
-        config_destroy(cfp);
-        fprintf(stderr, "Unknown 'type' : signal %d : %s\n", sig, type);
-        return 1;
-      }
-    }
-    Pprintf("Signal %d, type: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].type);
-
-    // Checking the secondary modulation type (OFDM primary)
-    strcpy(str,signumber);
-    strcat(str,".mod");
-    const char* mod;
-    if(!config_lookup_string(cfp, str, &mod)){
-      //Failed to find keyword
-      signal_container[sig-1].mod = gr::signal_exciter::PSK;
-    }
-    else{
-      //Found Keyword
-      std::string mod_lower = mod;
-      std::transform( mod_lower.begin(), mod_lower.end(), mod_lower.begin(), ::tolower );
-      if(strcmp(mod_lower.c_str(),"psk")==0){
-        signal_container[sig-1].mod = gr::signal_exciter::PSK;
-      }
-      else if(strcmp(mod_lower.c_str(),"qam")==0){
-        signal_container[sig-1].mod = gr::signal_exciter::QAM;
-      }
-      else if(strcmp(mod_lower.c_str(),"pam")==0){
-        signal_container[sig-1].mod = gr::signal_exciter::PAM;
-      }
-      else if(strcmp(mod_lower.c_str(),"ask")==0){
-        signal_container[sig-1].mod = gr::signal_exciter::ASK;
-      }
-      else{
-        config_destroy(cfp);
-        fprintf(stderr, "Unknown 'mod' : signal %d : %s\n", sig, mod);
-        return 1;
-      }
-    }
-    Pprintf("Signal %d, mod: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].mod);
-
-    // Checking the phase shaping type (CPM...)
-    strcpy(str,signumber);
-    strcat(str,".ptype");
-    const char* ptype;
-    if(!config_lookup_string(cfp, str, &ptype)){
-      //Failed to find keyword
-      signal_container[sig-1].phase_type = gr::analog::cpm::LREC;
-    }
-    else{
-      //Found Keyword
-      std::string ptype_lower = ptype;
-      std::transform( ptype_lower.begin(), ptype_lower.end(), ptype_lower.begin(), ::tolower );
-      if(strcmp(ptype_lower.c_str(),"lrec")==0){
-        signal_container[sig-1].phase_type = gr::analog::cpm::LREC;
-      }
-      else if(strcmp(ptype_lower.c_str(),"lrc")==0){
-        signal_container[sig-1].phase_type = gr::analog::cpm::LRC;
-      }
-      else if(strcmp(ptype_lower.c_str(),"lsrc")==0){
-        signal_container[sig-1].phase_type = gr::analog::cpm::LSRC;
-      }
-      else if(strcmp(ptype_lower.c_str(),"tfm")==0){
-        signal_container[sig-1].phase_type = gr::analog::cpm::TFM;
-      }
-      else if(strcmp(ptype_lower.c_str(),"gaussian")==0){
-        signal_container[sig-1].phase_type = gr::analog::cpm::GAUSSIAN;
-      }
-      else{
-        config_destroy(cfp);
-        fprintf(stderr, "Unknown 'ptype' : signal %d : %s\n", sig, ptype);
-        return 1;
-      }
-    }
-    Pprintf("Signal %d, ptype: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].phase_type);
-
-    // Checking for the number of pilot symbols (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".Npilot");
-    int pilot_count;
-    if(!config_lookup_int(cfp, str, &pilot_count)){
-      //Failed to find keyword
-      signal_container[sig-1].pilot_count = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].pilot_count = pilot_count;
-    }
-    Pprintf("Signal %d, Npilot: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pilot_count);
-
-    // Checking for the number of taps in the pulse shape (PSK/PAM/QAM/OFDM...)
-    strcpy(str,signumber);
-    strcat(str,".pulse_length");
-    int pulse_len;
-    if(!config_lookup_int(cfp, str, &pulse_len)){
-      //Failed to find keyword
-      signal_container[sig-1].pulse_len = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].pulse_len = pulse_len;
-    }
-    Pprintf("Signal %d, pulse_length: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pulse_len);
-
-    // Checking pilot location vector (OFDM)
-    const config_setting_t *ref;
-    strcpy(str,signumber);
-    strcat(str,".Ploc");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<int> Ploc(signal_container[sig-1].pilot_count, 0);
-      std::vector<size_t> ploc(signal_container[sig-1].pilot_count, 0);
-      for(int idx = 0; idx < signal_container[sig-1].pilot_count; idx++){
-        Ploc[idx] = config_setting_get_int_elem(ref,idx);
-        ploc[idx] = size_t(Ploc[idx]);
-      }
-      signal_container[sig-1].pilot_locations = std::vector<size_t>(ploc.begin(),ploc.end());
-    }
-    Pprintf("Signal %d, Ploc size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pilot_locations.size());
-
-    // Checking pulse shaping vector (PSK/PAM/QAM...) / interpolation taps (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".pulse_shape");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<double> pulse_shape(signal_container[sig-1].pulse_len, 1.);
-      std::vector<float> ps(signal_container[sig-1].pulse_len, 1.);
-      for(int idx = 0; idx < signal_container[sig-1].pulse_len; idx++){
-        pulse_shape[idx] = config_setting_get_float_elem(ref,idx);
-        ps[idx] = float(pulse_shape[idx]);
-      }
-      signal_container[sig-1].pulse_shape = std::vector<float>(ps.begin(),ps.end());
-    }
-    else{
-      signal_container[sig-1].pulse_shape = std::vector<float>(1,1.);
-      signal_container[sig-1].pulse_len = 1;
-    }
-    Pprintf("Signal %d, pulse_shape size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].pulse_shape.size());
-
-    // Checking for the modulation order
-    strcpy(str,signumber);
-    strcat(str,".order");
-    if(!config_lookup_int(cfp, str, &signal_container[sig-1].order)){
-      //Failed to find keyword
-      signal_container[sig-1].order = 2;
-    }
-    Pprintf("Signal %d, order: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].order);
-
-    // Checking for the number of subcarriers (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".Nsc");
-    int active_carriers;
-    if(!config_lookup_int(cfp, str, &active_carriers)){
-      //Failed to find keyword
-      signal_container[sig-1].active_carriers = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].active_carriers = active_carriers;
-    }
-    Pprintf("Signal %d, Nsc: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].active_carriers);
-
-    // Checking for the fft size (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".NFFT");
-    int fftsize;
-    if(!config_lookup_int(cfp, str, &fftsize)){
-      //Failed to find keyword
-      signal_container[sig-1].fftsize = 256;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].fftsize = fftsize;
-    }
-    Pprintf("Signal %d, NFFT: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].fftsize);
-
-    // Checking for the cyclic prefix length (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".CPL");
-    int cp_len;
-    if(!config_lookup_int(cfp, str, &cp_len)){
-      //Failed to find keyword
-      signal_container[sig-1].cp_len = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].cp_len = cp_len;
-    }
-    Pprintf("Signal %d, CPL: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].cp_len);
-
-    // Checking for the number of OFDM symbols in an OFDM frame (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".SPF");
-    int syms_per_frame;
-    if(!config_lookup_int(cfp, str, &syms_per_frame)){
-      //Failed to find keyword
-      signal_container[sig-1].syms_per_frame = 1;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].syms_per_frame = syms_per_frame;
-    }
-    Pprintf("Signal %d, SPF: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].syms_per_frame);
-
-    // Checking for the number of OFDM sample overlapping in an OFDM symbols (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".samp_overlap");
-    int samp_overlap;
-    if(!config_lookup_int(cfp, str, &samp_overlap)){
-      //Failed to find keyword
-      signal_container[sig-1].samp_overlap = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].samp_overlap = samp_overlap;
-    }
-    Pprintf("Signal %d, samp_overlap: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].samp_overlap);
-
-    // Checking taper vector (OFDM...)
-    strcpy(str,signumber);
-    strcat(str,".taper");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<double> tapering(signal_container[sig-1].samp_overlap, 1.);
-      std::vector<float> taper(signal_container[sig-1].samp_overlap, 1.);
-      for(int idx = 0; idx < signal_container[sig-1].samp_overlap; idx++){
-        tapering[idx] = config_setting_get_float_elem(ref,idx);
-        taper[idx] = float(tapering[idx]);
-      }
-      signal_container[sig-1].taper = std::vector<float>(taper.begin(),taper.end());
-    }
-    else{
-      signal_container[sig-1].taper = std::vector<float>(0);
-    }
-    Pprintf("Signal %d, taper size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].taper.size());
-
-    // Checking for the number of samples per symbol (PSK/PAM/QAM...) / integer interpolation (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".SPS");
-    if(!config_lookup_int(cfp, str, &signal_container[sig-1].sps)){
-      //Failed to find keyword
-      strcpy(str,signumber);
-      strcat(str,".sps");//I keep forgetting this one
-      if(!config_lookup_int(cfp, str, &signal_container[sig-1].sps)){
-        //Failed to find both keywords
-        signal_container[sig-1].sps = 1;
-      }
-    }
-    Pprintf("Signal %d, SPS: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].sps);
-
-    // Checking for the number characters per word (CWMORSE)
-    strcpy(str,signumber);
-    strcat(str,".char_per_word");
-    if(!config_lookup_int(cfp, str, &signal_container[sig-1].char_per_word)){
-      //Failed to find keyword
-      signal_container[sig-1].char_per_word = 4;
-    }
-    Pprintf("Signal %d, char_per_word: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].char_per_word);
-
-    // Checking for the number overlapping symbols with phase shaping (CPM...)
-    strcpy(str,signumber);
-    strcat(str,".L");
-    int L;
-    if(!config_lookup_int(cfp, str, &L)){
-      //Failed to find keyword
-      signal_container[sig-1].L = 4;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].L = L;
-    }
-    Pprintf("Signal %d, L: %u", size_t((sig-1)%8+1), sig, signal_container[sig-1].L);
-
-    // Checking for the sample rate for generation of the signal
-    strcpy(str,signumber);
-    strcat(str,".Fs");
-    double fs;
-    if(!config_lookup_float(cfp, str, &fs)){
-      //Failed to find keyword
-      signal_container[sig-1].fs = 1.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].fs = fs;
-    }
-    Pprintf("Signal %d, Fs: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].fs);
-
-    // Checking for the center frequency of the signal
-    strcpy(str,signumber);
-    strcat(str,".CenterFreq");
-    double fc;
-    if(!config_lookup_float(cfp, str, &fc)){
-      //Failed to find keyword
-      signal_container[sig-1].fc = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].fc = fc;
-    }
-    Pprintf("Signal %d, CenterFreq: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].fc);
-
-    // Checking for the gain (dB) of the signal
-    strcpy(str,signumber);
-    strcat(str,".Gain");
-    double gain;
-    if(!config_lookup_float(cfp, str, &gain)){
-      //Failed to find keyword
-      signal_container[sig-1].gain = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].gain = gain;
-    }
-    Pprintf("Signal %d, Gain: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].gain);
-
-    // Checking for the offset of the signal (phase ..)
-    strcpy(str,signumber);
-    strcat(str,".offset");
-    double offset;
-    if(!config_lookup_float(cfp, str, &offset)){
-      //Failed to find keyword
-      signal_container[sig-1].offset = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].offset = offset;
-    }
-    Pprintf("Signal %d, offset: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].offset);
-
-    // Checking for the digital backoff (dB) (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".backoff");
-    double backoff;
-    if(!config_lookup_float(cfp, str, &backoff)){
-      //Failed to find keyword
-      signal_container[sig-1].backoff = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].backoff = backoff;
-    }
-    Pprintf("Signal %d, backoff: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].backoff);
-
-    // Checking for the analog component count (Analog...)
-    strcpy(str,signumber);
-    strcat(str,".components");
-    int components;
-    if(!config_lookup_int(cfp, str, &components)){
-      //Failed to find keyword
-      signal_container[sig-1].components = 0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].components = components;
-    }
-    Pprintf("Signal %d, components: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].components);
-
-    // Checking mu vector (Analog...)
-    strcpy(str,signumber);
-    strcat(str,".mu");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<double> mus(signal_container[sig-1].components, 0.);
-      std::vector<float> mu(signal_container[sig-1].components, 0.);
-      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
-        mus[idx] = config_setting_get_float_elem(ref,idx);
-        mu[idx] = float(mus[idx]);
-      }
-      signal_container[sig-1].mu = std::vector<float>(mu.begin(),mu.end());
-    }
-    else{
-      signal_container[sig-1].mu = std::vector<float>(0);
-    }
-    Pprintf("Signal %d, mu size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].mu.size());
-
-    // Checking sigma vector (Analog...)
-    strcpy(str,signumber);
-    strcat(str,".sigma");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<double> sigs(signal_container[sig-1].components, 0.);
-      std::vector<float> sigm(signal_container[sig-1].components, 0.);
-      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
-        sigs[idx] = config_setting_get_float_elem(ref,idx);
-        sigm[idx] = float(sigs[idx]);
-      }
-      signal_container[sig-1].sigma = std::vector<float>(sigm.begin(),sigm.end());
-    }
-    else{
-      signal_container[sig-1].sigma = std::vector<float>(0);
-    }
-    Pprintf("Signal %d, sigma size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].sigma.size());
-
-    // Checking weight vector (Analog...)
-    strcpy(str,signumber);
-    strcat(str,".weight");
-    ref = config_lookup(cfp, str);
-    if(ref){
-      // Found Keyword
-      std::vector<double> weights(signal_container[sig-1].components, 0.);
-      std::vector<float> weight(signal_container[sig-1].components, 0.);
-      for(int idx = 0; idx < signal_container[sig-1].components; idx++){
-        weights[idx] = config_setting_get_float_elem(ref,idx);
-        weight[idx] = float(weights[idx]);
-      }
-      signal_container[sig-1].weight = std::vector<float>(weight.begin(),weight.end());
-    }
-    else{
-      signal_container[sig-1].weight = std::vector<float>(0);
-    }
-    Pprintf("Signal %d, weight size: %lu", size_t((sig-1)%8+1), sig, signal_container[sig-1].weight.size());
-
-    // Checking for the modulation index
-    strcpy(str,signumber);
-    strcat(str,".mod_idx");
-    double mod_idx;
-    if(!config_lookup_float(cfp, str, &mod_idx)){
-      //Failed to find keyword
-      signal_container[sig-1].mod_idx = 0.5;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].mod_idx = mod_idx;
-    }
-    Pprintf("Signal %d, mod_idx: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].mod_idx);
-
-    // Checking for the number of words per minute (CWMORSE)
-    strcpy(str,signumber);
-    strcat(str,".words_per_min");
-    double words_per_minute;
-    if(!config_lookup_float(cfp, str, &words_per_minute)){
-      //Failed to find keyword
-      signal_container[sig-1].words_per_minute = 120;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].words_per_minute = words_per_minute;
-    }
-    Pprintf("Signal %d, words_per_minute: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].words_per_minute);
-
-    // Checking for the pulse shaping parameter
-    strcpy(str,signumber);
-    strcat(str,".beta");
-    double beta;
-    if(!config_lookup_float(cfp, str, &beta)){
-      //Failed to find keyword
-      signal_container[sig-1].beta = 0.35;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].beta = beta;
-    }
-    Pprintf("Signal %d, beta: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].beta);
-
-    // Checking for the base word (CWMORSE)
-    strcpy(str,signumber);
-    strcat(str,".base_word");
-    int base_word;
-    if(!config_lookup_bool(cfp, str, &base_word)){
-      //Failed to find keyword
-      signal_container[sig-1].base_word = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].base_word = base_word;
-    }
-    Pprintf("Signal %d, base_word: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].base_word);
-
-    // Checking for the Pilots Per Frame flag (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".ppf");
-    int ppf;
-    if(!config_lookup_bool(cfp, str, &ppf)){
-      //Failed to find keyword
-      signal_container[sig-1].pilot_per_frame = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].pilot_per_frame = ppf;
-    }
-    Pprintf("Signal %d, ppf: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].pilot_per_frame);
-
-    // Checking for the add sync symbols flag (OFDM)
-    strcpy(str,signumber);
-    strcat(str,".addSync");
-    int addSync;
-    if(!config_lookup_bool(cfp, str, &addSync)){
-      //Failed to find keyword
-      signal_container[sig-1].add_sync = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].add_sync = addSync;
-    }
-    Pprintf("Signal %d, addSync: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].add_sync);
-
-    // Checking for the opg flag
-    strcpy(str,signumber);
-    strcat(str,".ops_gate");
-    int opsg;
-    if(!config_lookup_bool(cfp, str, &opsg)){
-      //Failed to find keyword
-      signal_container[sig-1].ops_gate = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].ops_gate = opsg;
-    }
-    Pprintf("Signal %d, ops_gate: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].ops_gate);
-
-    // Checking for the per_gate flag
-    strcpy(str,signumber);
-    strcat(str,".per_gate");
-    int perg;
-    if(!config_lookup_bool(cfp, str, &perg)){
-      //Failed to find keyword
-      signal_container[sig-1].per_gate = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].per_gate = perg;
-    }
-    Pprintf("Signal %d, per_gate: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].per_gate);
-
-    // Checking for the rnd_gate flag
-    strcpy(str,signumber);
-    strcat(str,".rnd_gate");
-    int rndg;
-    if(!config_lookup_bool(cfp, str, &rndg)){
-      //Failed to find keyword
-      signal_container[sig-1].rnd_gate = false;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].rnd_gate = rndg;
-    }
-    Pprintf("Signal %d, rnd_gate: %d", size_t((sig-1)%8+1), sig, signal_container[sig-1].rnd_gate);
-
-    // Checking for the per gate on duration
-    strcpy(str,signumber);
-    strcat(str,".per_gate_on");
-    double pgon;
-    if(!config_lookup_float(cfp, str, &pgon)){
-      //Failed to find keyword
-      signal_container[sig-1].per_gate_on = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].per_gate_on = pgon;
-    }
-    Pprintf("Signal %d, per_gate_on: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].per_gate_on);
-
-    // Checking for the per gate off duration
-    strcpy(str,signumber);
-    strcat(str,".per_gate_off");
-    double pgoff;
-    if(!config_lookup_float(cfp, str, &pgoff)){
-      //Failed to find keyword
-      signal_container[sig-1].per_gate_off = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].per_gate_off = pgoff;
-    }
-    Pprintf("Signal %d, per_gate_off: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].per_gate_off);
-
-    // Checking for the per gate periodic offset
-    strcpy(str,signumber);
-    strcat(str,".per_gate_offset");
-    double pgoffset;
-    if(!config_lookup_float(cfp, str, &pgoffset)){
-      //Failed to find keyword
-      signal_container[sig-1].per_gate_offset = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].per_gate_offset = pgoffset;
-    }
-    Pprintf("Signal %d, per_gate_offset: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].per_gate_offset);
-
-    // Checking for the one pass gate on duration
-    strcpy(str,signumber);
-    strcat(str,".ops_gate_on");
-    double ogon;
-    if(!config_lookup_float(cfp, str, &ogon)){
-      //Failed to find keyword
-      signal_container[sig-1].ops_gate_on = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].ops_gate_on = ogon;
-    }
-    Pprintf("Signal %d, ops_gate_on: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].ops_gate_on);
-
-    // Checking for the one pas gate off duration
-    strcpy(str,signumber);
-    strcat(str,".ops_gate_off");
-    double ogoff;
-    if(!config_lookup_float(cfp, str, &ogoff)){
-      //Failed to find keyword
-      signal_container[sig-1].ops_gate_off = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].ops_gate_off = ogoff;
-    }
-    Pprintf("Signal %d, ops_gate_off: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].ops_gate_off);
-
-    // Checking for the random gate on duration min
-    strcpy(str,signumber);
-    strcat(str,".rnd_gate_on_min");
-    double rgonmin;
-    if(!config_lookup_float(cfp, str, &rgonmin)){
-      //Failed to find keyword
-      signal_container[sig-1].rnd_gate_on_min = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].rnd_gate_on_min = rgonmin;
-    }
-    Pprintf("Signal %d, rnd_gate_on_min: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].rnd_gate_on_min);
-
-    // Checking for the random gate on duration max
-    strcpy(str,signumber);
-    strcat(str,".rnd_gate_on_max");
-    double rgonmax;
-    if(!config_lookup_float(cfp, str, &rgonmax)){
-      //Failed to find keyword
-      signal_container[sig-1].rnd_gate_on_max = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].rnd_gate_on_max = rgonmax;
-    }
-    Pprintf("Signal %d, rnd_gate_on_max: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].rnd_gate_on_max);
-
-    // Checking for the random gate off duration min
-    strcpy(str,signumber);
-    strcat(str,".rnd_gate_off_min");
-    double rgoffmin;
-    if(!config_lookup_float(cfp, str, &rgoffmin)){
-      //Failed to find keyword
-      signal_container[sig-1].rnd_gate_off_min = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].rnd_gate_off_min = rgoffmin;
-    }
-    Pprintf("Signal %d, rnd_gate_off_min: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].rnd_gate_off_min);
-
-    // Checking for the random gate off duration max
-    strcpy(str,signumber);
-    strcat(str,".rnd_gate_off_max");
-    double rgoffmax;
-    if(!config_lookup_float(cfp, str, &rgoffmax)){
-      //Failed to find keyword
-      signal_container[sig-1].rnd_gate_off_max = 0.0;
-    }
-    else{
-      //Found keyword
-      signal_container[sig-1].rnd_gate_off_max = rgoffmax;
-    }
-    Pprintf("Signal %d, rnd_gate_off_max: %1.3e", size_t((sig-1)%8+1), sig, signal_container[sig-1].rnd_gate_off_max);
-
-
-    //Value tweaks
-    if(signal_container[sig-1].type == gr::signal_exciter::CWMORSE){
-      if(signal_container[sig-1].base_word)
-        signal_container[sig-1].fs = signal_container[sig-1].words_per_minute;
-      else
-        signal_container[sig-1].fs = signal_container[sig-1].words_per_minute/1.2;
-    }
-
-  }
-
-  config_destroy(cfp);
-  return 0;
+  return 1;
 }
 
-int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* signal_list, gr::top_block_sptr& tb, size_t& byteCount)
+int GenerateFlowGraph(system_var system_config,
+            std::vector<gr::signal_exciter::sig_params> &signal_list,
+            gr::top_block_sptr& tb, size_t& byteCount)
 {
   size_t SynthSize = SYNTH_SIZE;
   size_t SignalCount = system_config.NumSignals;
@@ -1093,6 +290,9 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
         return 1;
       }
 
+      printf("Sig_Fc(%1.3e) Sys_Fc(%1.3e) Xlate(%1.3e)\n",
+          signal_list[sig_idx].fc,system_config.CenterFreq,
+          signal_list[sig_idx].fc - system_config.CenterFreq);
       xlate_freq = signal_list[sig_idx].fc - system_config.CenterFreq;
       if((xlate_freq <= synth_chan_boundaries[0]) || (xlate_freq >= synth_chan_boundaries[SynthSize-1])){
         fprintf(stderr, "Signal %lu is centered outside the system's bandwidth. This is not curently allowed.\n", sig_idx+1);
@@ -1270,7 +470,8 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
       int_resamp_taps.push_back(std::vector< std::vector<float> >(0));
       for(size_t filtidx = 0; filtidx < int_filts; filtidx++){
         int_resamp_taps[sig_idx].push_back(gen_int_interp_taps(upsamp_factors[filtidx]));
-        int_resamplers[sig_idx].push_back(gr::filter::interp_fir_filter_ccf::make(upsamp_factors[filtidx], int_resamp_taps[sig_idx][filtidx]));
+        int_resamplers[sig_idx].push_back(gr::filter::interp_fir_filter_ccf::make(
+            upsamp_factors[filtidx], int_resamp_taps[sig_idx][filtidx]));
         block_list[sig_idx].push_back(int_resamplers[sig_idx][filtidx]);
         size_t irtl = (int_resamp_taps[sig_idx][filtidx].size()-1)/2;
         int_skip[sig_idx].push_back(gr::blocks::skiphead::make(sizeof(gr_complex), irtl));
@@ -1301,7 +502,11 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
     }
     if(use_per){
       Cprintf("Signal %lu, making per.",sig_idx%8+1,sig_idx+1);
-      periodic_gates[sig_idx] = gr::signal_exciter::periodic_gate::make(target_fs, signal_list[sig_idx].per_gate_off, signal_list[sig_idx].per_gate_on, signal_list[sig_idx].per_gate_offset);
+      periodic_gates[sig_idx] = gr::signal_exciter::periodic_gate::make(
+          target_fs,
+          signal_list[sig_idx].per_gate_off,
+          signal_list[sig_idx].per_gate_on,
+          signal_list[sig_idx].per_gate_offset);
       block_list[sig_idx].push_back(periodic_gates[sig_idx]);
 #if DEBUG_OUTPUT
       sprintf(debug_head, "debug_sig%02lu_perg.fc32",sig_idx+1);
@@ -1312,7 +517,12 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
     }
     if(use_rnd){
       Cprintf("Signal %lu, making rnd.",sig_idx%8+1,sig_idx+1);
-      random_gates[sig_idx] = gr::signal_exciter::random_gate::make(target_fs, signal_list[sig_idx].rnd_gate_off_min, signal_list[sig_idx].rnd_gate_off_max, signal_list[sig_idx].rnd_gate_on_min, signal_list[sig_idx].rnd_gate_on_max,system_config.Seed++);
+      random_gates[sig_idx] = gr::signal_exciter::random_gate::make(target_fs,
+          signal_list[sig_idx].rnd_gate_off_min,
+          signal_list[sig_idx].rnd_gate_off_max,
+          signal_list[sig_idx].rnd_gate_on_min,
+          signal_list[sig_idx].rnd_gate_on_max,
+          system_config.Seed++);
       block_list[sig_idx].push_back(random_gates[sig_idx]);
 #if DEBUG_OUTPUT
       sprintf(debug_head, "debug_sig%02lu_rndg.fc32",sig_idx+1);
@@ -1323,7 +533,11 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
     }
     if(use_opg){
       Cprintf("Signal %lu, making opg.",sig_idx%8+1,sig_idx+1);
-      one_pass_gates[sig_idx] = gr::signal_exciter::one_pass_gate::make(target_fs, signal_list[sig_idx].ops_gate_off, signal_list[sig_idx].ops_gate_on, false);
+      one_pass_gates[sig_idx] = gr::signal_exciter::one_pass_gate::make(
+            target_fs,
+            signal_list[sig_idx].ops_gate_off,
+            signal_list[sig_idx].ops_gate_on,
+            false);
       block_list[sig_idx].push_back(one_pass_gates[sig_idx]);
 #if DEBUG_OUTPUT
       sprintf(debug_head, "debug_sig%02lu_opsg.fc32",sig_idx+1);
@@ -1390,7 +604,7 @@ int GenerateFlowGraph(system_var system_config, gr::signal_exciter::sig_params* 
   synthesizer = gr::filter::pfb_synthesizer_ccf::make(SynthSize, synthesizer_taps, true);
   synthesizer->set_tag_propagation_policy(gr::block::TPP_DONT);
 
-    
+
 
   synthesizer->set_channel_map(synth_mapping);
 
@@ -1612,7 +826,7 @@ int main(int argc, char** argv)
 {
 
   if(argc < 2){
-    std::cerr << "Usage: " << argv[0] << " <config_file>.cfg" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <config_file>.json" << std::endl;
     return 0;
   }
 
@@ -1621,7 +835,7 @@ int main(int argc, char** argv)
 
   size_t max_signals = SIGNAL_MAX;
   system_var system_config;
-  gr::signal_exciter::sig_params signal_list[max_signals];
+  std::vector<gr::signal_exciter::sig_params> signal_list;
 
   std::string run_name = "Signal Exciter " + config_file;
 
@@ -1650,19 +864,3 @@ int main(int argc, char** argv)
 
   return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
