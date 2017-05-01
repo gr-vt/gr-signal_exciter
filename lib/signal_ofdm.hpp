@@ -7,6 +7,7 @@
 #include "signal_qam.hpp"
 #include "signal_pam.hpp"
 #include <fftw3.h>
+#include <gnuradio/filter/firdes.h>
 #include <gnuradio/filter/fir_filter.h>
 #include <volk/volk.h>
 

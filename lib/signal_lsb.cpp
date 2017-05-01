@@ -4,7 +4,7 @@
 #include <stdio.h>//////////////////////////////////
 
 Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
-                      float* sigma, float* weight, float samp_rate,
+                      float* sigma, float* weight, float max_freq,
                       size_t tap_count, int seed, bool norm,
                       float* interp_taps, size_t tap_len, int interp,
                       float fso, bool enable, size_t buff_size,
@@ -21,7 +21,7 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
 {
   set_seed(seed);
   boost::mutex::scoped_lock scoped_lock(fftw_lock());
-  d_gmm_tap_gen.set_params(components, mu, sigma, weight, samp_rate, tap_count);
+  d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
   generate_taps();
 
   d_rng = new gr::random(d_seed, 0, 1);
@@ -32,12 +32,6 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
     d_running = true;
     auto_fill_symbols();
     auto_fill_signal();
-  }
-  if(d_norm){
-    std::vector<complexf> burn_buff(50);
-    for(size_t count = 0; count < d_burn; count++){
-      generate_signal( &burn_buff[0], d_burn );
-    }
   }
   d_first_pass = true;
 
@@ -66,6 +60,12 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
   // Generate and load the GNURadio FIR Filters with the pulse shape.
   load_firs();
   //printf("DSB::Loaded FIR filters.\n");
+  if(d_norm){
+    std::vector<complexf> burn_buff(50);
+    for(size_t count = 0; count < d_burn; count++){
+      generate_signal( &burn_buff[0], d_burn );
+    }
+  }
 }
 
 Signal_LSB::~Signal_LSB()

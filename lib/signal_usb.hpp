@@ -76,7 +76,7 @@ class Signal_USB : public Signal_Base
 
   public:
     Signal_USB(float mod_idx, size_t components, float* mu, float* sigma,
-                float* weight, float samp_rate, size_t tap_count, int seed,
+                float* weight, float max_freq, size_t tap_count, int seed,
                 bool norm=false, float* interp_taps=NULL, size_t tap_len=0,
                 int interp=1, float fso=0., bool enable=true,
                 size_t buff_size=8192, size_t min_notify=512);

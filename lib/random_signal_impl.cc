@@ -64,7 +64,7 @@ namespace gr {
         //d_mod = new Signal_FM(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed);
         d_mod = new Signal_FM(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
-                              &d_params.weight[0],d_params.fs,
+                              &d_params.weight[0],d_params.f_max,
                               d_params.spectral_len,seed,
                               &d_params.pulse_shape[0],d_params.pulse_len,
                               d_params.sps,d_params.frac_symb_offset);
@@ -73,7 +73,7 @@ namespace gr {
         //d_mod = new Signal_DSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_DSB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
-                              &d_params.weight[0],d_params.fs,
+                              &d_params.weight[0],d_params.f_max,
                               d_params.spectral_len,seed,d_params.am_norm,
                               &d_params.pulse_shape[0],d_params.pulse_len,
                               d_params.sps,d_params.frac_symb_offset);
@@ -82,7 +82,7 @@ namespace gr {
         //d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_DSBSC(d_params.mod_idx,d_params.components,
                                 &d_params.mu[0],&d_params.sigma[0],
-                                &d_params.weight[0],d_params.fs,
+                                &d_params.weight[0],d_params.f_max,
                                 d_params.spectral_len,seed,d_params.am_norm,
                                 &d_params.pulse_shape[0],d_params.pulse_len,
                                 d_params.sps,d_params.frac_symb_offset);
@@ -91,7 +91,7 @@ namespace gr {
         //d_mod = new Signal_USB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_USB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
-                              &d_params.weight[0],d_params.fs,
+                              &d_params.weight[0],d_params.f_max,
                               d_params.spectral_len,seed,d_params.am_norm,
                               &d_params.pulse_shape[0],d_params.pulse_len,
                               d_params.sps,d_params.frac_symb_offset);
@@ -100,7 +100,7 @@ namespace gr {
         //d_mod = new Signal_LSB(d_params.mod_idx,d_params.f_max,d_params.var1,d_params.var2,d_params.thresh,seed,d_params.am_norm);
         d_mod = new Signal_LSB(d_params.mod_idx,d_params.components,
                               &d_params.mu[0],&d_params.sigma[0],
-                              &d_params.weight[0],d_params.fs,
+                              &d_params.weight[0],d_params.f_max,
                               d_params.spectral_len,seed,d_params.am_norm,
                               &d_params.pulse_shape[0],d_params.pulse_len,
                               d_params.sps,d_params.frac_symb_offset);

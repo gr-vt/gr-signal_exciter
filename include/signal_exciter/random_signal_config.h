@@ -110,6 +110,7 @@ namespace gr {
       std::vector<float> weight;            // weights of each spectral guassian component (analog mods)
       size_t components;                    // number of spectral guassian components (analog mods)
       size_t spectral_len;                  // number of points/taps in the spectral tap generation
+      float f_max;                          // Maximum frequency at generation (pre-interp)
 
 
     };

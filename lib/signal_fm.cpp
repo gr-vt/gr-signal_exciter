@@ -4,7 +4,7 @@
 #include <stdio.h>//////////////////////////////////
 
 Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
-                    float* weight, float samp_rate, size_t tap_count, int seed,
+                    float* weight, float max_freq, size_t tap_count, int seed,
                     float* interp_taps, size_t tap_len, int interp,
                     float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
@@ -18,7 +18,7 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
 {
   set_seed(seed);
   boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
-  d_gmm_tap_gen.set_params(components, mu, sigma, weight, samp_rate, tap_count);
+  d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
   generate_taps();
 
   d_rng = new gr::random(d_seed, 0, 1);

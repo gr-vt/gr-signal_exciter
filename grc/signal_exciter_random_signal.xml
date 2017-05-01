@@ -78,7 +78,7 @@ for ii in range(#end raw $components#raw):#end raw
 #end raw
 sig_params.weight           = $wtid
 
-sig_params.fs               = 2.*$max_freq
+sig_params.f_max            = $max_freq
 sig_params.spectral_len     = $ntaps
 sig_params.am_norm          = False
 #end if
