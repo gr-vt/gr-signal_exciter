@@ -279,6 +279,7 @@ int GenerateFlowGraph(system_var system_config,
 
     bool good_config = false; //Run until a good configuration is found, or unobtainable
     double xlate_freq = 0.;   //How much translation is needed?
+    int synth_chan_center_outside; // Figure out what the external center is
     size_t synth_chan_center; //Which synth channel is it centered in?
     size_t chann_chan_center; //Which chann channel is it centered in? (due to channel map)
     size_t synth_start_connection; //Which synth channel should it start connecting at?
@@ -287,99 +288,114 @@ int GenerateFlowGraph(system_var system_config,
       Cprintf("Signal %lu aiming for %lu channels.", sig_idx%8+1, sig_idx+1, nbins);
       if(nbins>SynthSize){
         fprintf(stderr, "Signal %lu requires a channelizer larger than synthesizer. This is not currently allowed.\n", sig_idx+1);
+        //TODO: Can modify this to only take the inner channels, consider.
         return 1;
       }
 
-      printf("Sig_Fc(%1.3e) Sys_Fc(%1.3e) Xlate(%1.3e)\n",
-          signal_list[sig_idx].fc,system_config.CenterFreq,
-          signal_list[sig_idx].fc - system_config.CenterFreq);
       xlate_freq = signal_list[sig_idx].fc - system_config.CenterFreq;
+      bool inside_boundaries = true;
       if((xlate_freq <= synth_chan_boundaries[0]) || (xlate_freq >= synth_chan_boundaries[SynthSize-1])){
+        //TODO: Can modify to make these an edge case, toss the remaining channels. Will need to extrapolate translation then.
         fprintf(stderr, "Signal %lu is centered outside the system's bandwidth. This is not curently allowed.\n", sig_idx+1);
         return 1;
+        inside_boundaries = false;
       }
 
       Cprintf("Signal %lu needs to translate by %1.3e.", sig_idx%8+1, sig_idx+1, xlate_freq);
 
-      synth_chan_center = 0;
-      while((xlate_freq > synth_chan_boundaries[synth_chan_center]) && (synth_chan_center < SynthSize-1)){
-        if(xlate_freq > synth_chan_boundaries[synth_chan_center+1]){
-          // Centerd in at least the next channel
-          synth_chan_center++;
+      if(inside_boundaries){
+        synth_chan_center = 0;
+        while((xlate_freq > synth_chan_boundaries[synth_chan_center]) && (synth_chan_center < SynthSize-1)){
+          if(xlate_freq > synth_chan_boundaries[synth_chan_center+1]){
+            // Centerd in at least the next channel
+            synth_chan_center++;
+          }
+          else{
+            // Definately in this channel
+            break;
+          }
+        }
+
+        Cprintf("Signal %lu is centered in channel %d with a channel center %1.3e.", sig_idx%8+1, sig_idx+1, synth_chan_center, synth_chan_centers[synth_chan_center]);
+
+        xlate_freq = xlate_freq - synth_chan_centers[synth_chan_center];
+
+        Cprintf("Signal %lu requires a relative offset of %1.3e for that synth channel.", sig_idx%8+1, sig_idx+1, xlate_freq);
+
+        double upper_limit = xlate_freq + double(signal_list[sig_idx].fs)/2. + synth_chan_centers[synth_chan_center];
+        double lower_limit = xlate_freq - double(signal_list[sig_idx].fs)/2. + synth_chan_centers[synth_chan_center];
+        if(nbins == 1){
+          //Check if the xlate causes the bin size to increase
+          if((lower_limit < synth_chan_boundaries[synth_chan_center]) || (upper_limit > synth_chan_boundaries[synth_chan_center+1])){
+            // The translation incurred channel requried count
+            nbins = 2;
+            Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center], upper_limit, synth_chan_boundaries[synth_chan_center+1]);
+          }
+          else{
+            // Signal is fully within a single synth channel
+            target_fs = 2*synth_chan;//2x oversampled synthesizer
+            chann_chan_center = 0;
+            synth_start_connection = synth_chan_center;
+            good_config = true;
+          }
+        }
+        else if(nbins==SynthSize){
+          //Signal fits exactly into desired spectrum... special case
+          if((lower_limit >= -system_config.SysBW/2.) && (upper_limit <= system_config.SysBW/2.)){
+            target_fs = system_config.SysBW;
+            chann_chan_center = nbins/2;
+            synth_start_connection = 0;
+            crit_bins = SynthSize-1;
+            good_config = true;
+          }
+          else{
+            if((lower_limit < -system_config.SysBW/2.) && (upper_limit > system_config.SysBW/2.)){
+              nbins = nbins*2;
+              Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center], upper_limit, synth_chan_boundaries[synth_chan_center+1]);
+            }
+            else{
+              target_fs = system_config.SysBW;
+              chann_chan_center = nbins/2;
+              synth_start_connection = 0;
+              crit_bins = SynthSize-1;
+              good_config = true;
+            }
+          }
         }
         else{
-          // Definately in this channel
-          break;
-        }
-      }
-
-      Cprintf("Signal %lu is centered in channel %lu with a channel center %1.3e.", sig_idx%8+1, sig_idx+1, synth_chan_center, synth_chan_centers[synth_chan_center]);
-
-      xlate_freq = xlate_freq - synth_chan_centers[synth_chan_center];
-
-      Cprintf("Signal %lu is requires a relative offset of %1.3e for that synth channel.", sig_idx%8+1, sig_idx+1, xlate_freq);
-
-      double upper_limit = xlate_freq + double(signal_list[sig_idx].fs)/2. + synth_chan_centers[synth_chan_center];
-      double lower_limit = xlate_freq - double(signal_list[sig_idx].fs)/2. + synth_chan_centers[synth_chan_center];
-      if(nbins == 1){
-        //Check if the xlate causes the bin size to increase
-        if((lower_limit < synth_chan_boundaries[synth_chan_center]) || (upper_limit > synth_chan_boundaries[synth_chan_center+1])){
-          // The translation incurred channel requried count
-          nbins = 2;
-          Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center], upper_limit, synth_chan_boundaries[synth_chan_center+1]);
-        }
-        else{
-          // Signal is fully within a single synth channel
-          target_fs = 2*synth_chan;//2x oversampled synthesizer
-          chann_chan_center = 0;
-          synth_start_connection = synth_chan_center;
-          good_config = true;
-        }
-      }
-      else if(nbins==SynthSize){
-        //Signal fits exactly into desired spectrum... special case
-        if((lower_limit < -system_config.SysBW/2.) || (upper_limit > system_config.SysBW/2.)){
-          nbins = nbins*2;
-          Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center], upper_limit, synth_chan_boundaries[synth_chan_center+1]);
-        }
-        else{
-          target_fs = system_config.SysBW;
-          chann_chan_center = nbins/2;
-          synth_start_connection = 0;
-          crit_bins = SynthSize-1;
-          good_config = true;
+          //Needs at least 2 bins, check and make sure all bins fit.
+          //Hard coding to power of 2 channelizer
+          //////////////////////////////////////////////////////////
+          int chan_counter(1);
+          float chan_temp(nbins);
+          while(chan_temp > 1.){
+            chan_temp = chan_temp/2.;
+            chan_counter *= 2;
+          }
+          nbins = chan_counter;
+          //////////////////////////////////////////////////////////
+          //There are an even number of bins, but the wrap around bin will be tossed
+          int edge_room = (nbins-1)/2;//room upper and lower
+          if((int(synth_chan_center) - edge_room < 0) || (int(synth_chan_center)+edge_room > SynthSize-1)){
+            fprintf(stderr, "Signal %lu has critical bandwidth outside acceptable parameters.\n",sig_idx+1);
+            return 1;
+          }
+          if((lower_limit < synth_chan_boundaries[synth_chan_center-edge_room]) || (upper_limit > synth_chan_boundaries[synth_chan_center+1+edge_room])){
+            // True bandwidth escaped the critical boundary
+            nbins *= 2;
+            Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center-edge_room], upper_limit, synth_chan_boundaries[synth_chan_center+1+edge_room]);
+          }
+          else{
+            // The critical bandwidth is acceptable
+            target_fs = synth_chan * nbins; // channelizer/synth both at 2x
+            chann_chan_center = nbins/2;// [-nbins/2, nbins/2-1]
+            synth_start_connection = synth_chan_center - (crit_bins-1)/2;
+            good_config = true;
+          }
         }
       }
       else{
-        //Needs at least 2 bins, check and make sure all bins fit.
-        //Hard coding to power of 2 channelizer
-        //////////////////////////////////////////////////////////
-        int chan_counter(1);
-        float chan_temp(nbins);
-        while(chan_temp > 1.){
-          chan_temp = chan_temp/2.;
-          chan_counter *= 2;
-        }
-        nbins = chan_counter;
-        //////////////////////////////////////////////////////////
-        //There are an even number of bins, but the wrap around bin will be tossed
-        int edge_room = (nbins-1)/2;//room upper and lower
-        if((int(synth_chan_center) - edge_room < 0) || (int(synth_chan_center)+edge_room > SynthSize-1)){
-          fprintf(stderr, "Signal %lu has critical bandwidth outside acceptable parameters.\n",sig_idx+1);
-          return 1;
-        }
-        if((lower_limit < synth_chan_boundaries[synth_chan_center-edge_room]) || (upper_limit > synth_chan_boundaries[synth_chan_center+1+edge_room])){
-          // True bandwidth escaped the critical boundary
-          nbins *= 2;
-          Cprintf("\tNeed to increase the channel count.\n\t\t[Lower limit(%1.3e), Lower bound(%1.3e)]\n\t\t[Upper limit(%1.3e), Upper bound(%1.3e)]", sig_idx%8+1, lower_limit, synth_chan_boundaries[synth_chan_center-edge_room], upper_limit, synth_chan_boundaries[synth_chan_center+1+edge_room]);
-        }
-        else{
-          // The critical bandwidth is acceptable
-          target_fs = synth_chan * nbins; // channelizer/synth both at 2x
-          chann_chan_center = nbins/2;// [-nbins/2, nbins/2-1]
-          synth_start_connection = synth_chan_center - (crit_bins-1)/2;
-          good_config = true;
-        }
+        //TODO: Populate this
       }
     }
 

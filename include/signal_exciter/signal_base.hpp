@@ -14,6 +14,7 @@
 #include <gnuradio/random.h>
 #include <boost/random/random_device.hpp>
 #include <boost/math/special_functions/sinc.hpp>
+#include <gnuradio/fft/window.h>
 
 
 typedef std::complex<float> complexf;
@@ -22,6 +23,7 @@ typedef std::complex<float> complexf;
 #define M_2_PIl (2*M_PIl)
 #endif
 
+#define ENABLE_FRAC_DELAY_IN_BLOCK false
 
 class Signal_Base
 {
@@ -61,20 +63,24 @@ inline void Signal_Base::time_offset(std::vector<float> &taps,
                                      std::vector<float> &proto,
                                      float offset)
 {
-  if((offset > - 1.19e-07)&&(offset<1.19e-07)){
-    taps = std::vector<float>(proto.begin(), proto.end());
-  }
-  else{
-    taps = std::vector<float>(proto.size(),0.);
+  if(ENABLE_FRAC_DELAY_IN_BLOCK){
+    std::vector<double> proto2(proto.begin(),proto.end());
+    std::vector<double> taps2(proto.size(),0.);
+    std::vector<float> window = gr::fft::window::blackman_harris(proto.size());
+    std::vector<double> window2(window.begin(), window.end());
 
     for(int idx = 0; idx < proto.size(); idx++){
       for(int ind = 0; ind < proto.size(); ind++){
-        taps[idx] += proto[ind]*
-            boost::math::sinc_pi(M_PI*(float(idx)-float(ind) - offset));
+        taps2[idx] += proto2[ind]*window2[ind]*
+            boost::math::sinc_pi(M_PI*(double(idx)-double(ind) - double(offset)));
       }
+      taps2[idx] *= window2[idx];
     }
+    taps = std::vector<float>(taps2.begin(),taps2.end());
   }
-
+  else{
+    taps = proto;
+  }
 }
 
 #endif /* INCLUDED_SIGNAL_BASE_HPP */
