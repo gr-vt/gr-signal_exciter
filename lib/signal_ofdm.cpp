@@ -115,7 +115,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
 
 Signal_OFDM::~Signal_OFDM()
 {
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_running = false;
   fftwf_free(d_fft_in);
   fftwf_free(d_fft_out);
@@ -484,8 +484,9 @@ Signal_OFDM::load_firs()
     throw_runtime("signal_ofdm: error setting interp taps.\n");
   }
 
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  //std::vector<float> shifted_taps;
+  //time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  std::vector<float> shifted_taps = d_proto_taps;
 
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);

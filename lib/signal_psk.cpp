@@ -355,8 +355,9 @@ Signal_PSK::load_firs()
     throw_runtime("signal_psk: error setting pulse shaping taps.\n");
   }
 
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
+  //std::vector<float> shifted_taps;
+  //time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
+  std::vector<float> shifted_taps = d_proto_taps;
 
   d_taps = std::vector< std::vector<float> >(interp);
 

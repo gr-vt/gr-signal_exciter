@@ -25,26 +25,26 @@ include(GrPlatform) #define LIB_SUFFIX
 include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIRS})
 list(APPEND signal_exciter_sources
+    gmm_impl.cc
     signal_base.cpp
+    signal_threaded_buffer.cpp
+    signal_cwmorse.cpp
     signal_fm.cpp
-    signal_psk.cpp
-    signal_qam.cpp
     signal_dsb.cpp
     signal_dsbsc.cpp
     signal_usb.cpp
     signal_lsb.cpp
+    signal_psk.cpp
+    signal_qam.cpp
     signal_pam.cpp
-    signal_ofdm.cpp
-    signal_cwmorse.cpp
     signal_cpm.cpp
+    signal_ofdm.cpp
     random_signal_impl.cc
-    signal_threaded_buffer.cpp
     zero_counter_impl.cc
     cpm_hier_impl.cc
     periodic_gate_impl.cc
     random_gate_impl.cc
-    one_pass_gate_impl.cc
-    gmm_impl.cc )
+    one_pass_gate_impl.cc )
 
 set(signal_exciter_sources "${signal_exciter_sources}" PARENT_SCOPE)
 if(NOT signal_exciter_sources)

@@ -48,6 +48,10 @@ namespace gr {
               gr::io_signature::make(0, 0, 0),
               gr::io_signature::make(1, 1, sizeof(gr_complex)))
     {
+#ifndef SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
+#define SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
+      Signal_Base::set_mutex_pointer(&(gr::fft::planner::mutex()));
+#endif //SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
       /*printf("Got to the creation\n");
       roundone = true;*/
       //set_output_multiple(4);

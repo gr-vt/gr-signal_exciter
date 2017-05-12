@@ -332,8 +332,9 @@ Signal_CWMORSE::load_firs()
           d_interp_taps.size()*sizeof(float) );
 
 
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  //std::vector<float> shifted_taps;
+  //time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  std::vector<float> shifted_taps = d_proto_taps;
 
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);

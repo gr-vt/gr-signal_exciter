@@ -22,6 +22,7 @@
 #define INCLUDED_SIGNAL_EXCITER_PERIODIC_GATE_IMPL_H
 
 #include <signal_exciter/periodic_gate.h>
+#include <stdio.h>
 
 namespace gr {
   namespace signal_exciter {

@@ -20,7 +20,7 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
     d_norm(norm)
 {
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
   generate_taps();
 
@@ -255,8 +255,9 @@ Signal_DSB::load_firs()
   d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
   memcpy( &d_proto_taps[0], &d_interp_taps[0],
           d_interp_taps.size()*sizeof(float) );
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  //std::vector<float> shifted_taps;
+  //time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  std::vector<float> shifted_taps = d_proto_taps;
   d_xtaps = std::vector< std::vector<float> >(intp);
   size_t ts = shifted_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){

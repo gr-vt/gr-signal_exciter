@@ -308,8 +308,9 @@ Signal_CPM::load_firs()
 
 
   d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
+  //std::vector<float> shifted_taps;
+  //time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
+  std::vector<float> shifted_taps = d_proto_taps;
   d_frac_filt->set_taps(shifted_taps);
   d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }
