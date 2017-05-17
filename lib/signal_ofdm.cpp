@@ -11,7 +11,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
                          float mod_offset, int seed, bool add_sync,
                          float* symbol_taper, size_t sample_overlap,
                          float* interp_taps, size_t tap_len, int interp,
-                         float fso, bool enable, size_t buff_size,
+                         bool enable_fso, float fso, bool enable, size_t buff_size,
                          size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
@@ -106,7 +106,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
   d_symbol_length = d_fftsize+d_cp_len;
 
 
-  d_fso = fso;
+  enable_fractional_offsets(enable_fso,fso);
 
   d_align = volk_get_alignment();
 

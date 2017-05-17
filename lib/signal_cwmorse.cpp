@@ -5,7 +5,7 @@
 
 Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
                             bool base_word, int seed, float* interp_taps,
-                            size_t tap_len, int interp, float fso, bool enable,
+                            size_t tap_len, int interp, bool enable_fso, float fso, bool enable,
                             size_t buff_size, size_t min_notify)
   : d_cpw(char_per_word),
     d_wpm(words_per_minute),
@@ -42,12 +42,18 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
   }
   else{
     d_interp = 1;
-    tap_len = 23;
-    d_interp_taps = std::vector<float>(tap_len,0.);
-    d_interp_taps[(tap_len-1)/2] = 1.;
+    if(d_enable_fractional){
+      tap_len = 23;
+      d_interp_taps = std::vector<float>(tap_len,0.);
+      d_interp_taps[(tap_len-1)/2] = 1.;
+    }
+    else{
+      tap_len = 1;
+      d_interp_taps = std::vector<float>(tap_len,1.);
+    }
   }
 
-  d_fso = fso;
+  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
 

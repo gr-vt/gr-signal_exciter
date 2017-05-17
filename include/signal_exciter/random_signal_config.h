@@ -59,6 +59,7 @@ namespace gr {
       bool ops_gate;                        // Use one pass gate (OPG)?
       bool per_gate;                        // Use periodic gate (PG)?
       bool rnd_gate;                        // Use random gate   (RG)?
+      bool frac_offset;                     // Use fractional offset?
       float ops_gate_off;                   // OPG inital off duration
       float ops_gate_on;                    // OPG on duration
       float per_gate_off;                   // PG off duration

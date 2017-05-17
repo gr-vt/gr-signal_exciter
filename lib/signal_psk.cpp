@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        float fso, bool enable, size_t buff_size, size_t min_notify)
+                        bool enable_fso, float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -79,7 +79,7 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
-  d_fso = fso;
+  enable_fractional_offsets(enable_fso, fso);
   // Enable background threads for signal generation parallel processing.
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.

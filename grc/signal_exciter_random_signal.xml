@@ -134,7 +134,12 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
+sig_params.frac_offset = $efso
+#if $efso() in ('True')
 sig_params.frac_symb_offset = $fso
+#else
+sig_params.frac_symb_offset = 0.
+#end if
 
 #set $sp_id = 'sig_params_%s_'%$id
 $sp_id = sig_params
@@ -711,11 +716,32 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     </hide>
   </param>
   <param>
+    <name>Enable Fractional?</name>
+    <key>efso</key>
+    <value>False</value>
+    <type>enum</type>
+    <hide>part</hide>
+    <option>
+      <name>No</name>
+      <key>False</key>
+    </option>
+    <option>
+      <name>Yes</name>
+      <key>True</key>
+    </option>
+  </param>
+  <param>
     <name>Fractional Symbol Offset</name>
     <key>fso</key>
     <value>0.</value>
     <type>real</type>
-    <hide>part</hide>
+    <hide>
+#if $efso() in ('True')
+  part
+#else
+  all
+#end if
+    </hide>
   </param>
   <param>
     <name>Seed</name>

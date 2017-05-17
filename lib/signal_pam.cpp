@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        float fso, bool enable, size_t buff_size, size_t min_notify)
+                        bool enable_fso, float fso, bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -71,7 +71,7 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
   }
 
 
-  d_fso = fso;
+  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
 

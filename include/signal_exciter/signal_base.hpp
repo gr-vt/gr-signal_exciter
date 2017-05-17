@@ -68,6 +68,9 @@ class Signal_Base
     gr::random *d_rng;
     size_t d_indicator;
 
+    bool d_enable_fractional;
+    double d_fso;
+
     virtual boost::mutex& fftw_lock() const {return *d_mutex_ptr;}
     //virtual boost::mutex& fso_lock() const {return s_mutex_fso;}
 
@@ -83,6 +86,11 @@ class Signal_Base
   public:
     virtual ~Signal_Base() = 0;
 
+    void enable_fractional_offsets(bool enable, double fso=0.)
+    {
+      d_enable_fractional = enable;
+      d_fso = fso;
+    }
     virtual void generate_signal(complexf* output, size_t sample_count) = 0;
     virtual void generate_symbols(complexf* output, size_t symbol_count) = 0;
 

@@ -7,7 +7,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
                       float* sigma, float* weight, float max_freq,
                       size_t tap_count, int seed, bool norm,
                       float* interp_taps, size_t tap_len, int interp,
-                      float fso, bool enable, size_t buff_size,
+                      bool enable_fso, float fso, bool enable, size_t buff_size,
                       size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
@@ -19,6 +19,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
     d_agc(),
     d_norm(norm)
 {
+  get_indicator();
   set_seed(seed);
   //boost::mutex::scoped_lock scoped_lock(fftw_lock());
   (fftw_lock()).lock();
@@ -51,13 +52,19 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
   }
   else{
     d_interp = 1;
-    tap_len = 23;
-    d_interp_taps = std::vector<float>(tap_len,0.);
-    d_interp_taps[(tap_len-1)/2] = 1.;
+    if(d_enable_fractional){
+      tap_len = 23;
+      d_interp_taps = std::vector<float>(tap_len,0.);
+      d_interp_taps[(tap_len-1)/2] = 1.;
+    }
+    else{
+      tap_len = 1;
+      d_interp_taps = std::vector<float>(tap_len,1.);
+    }
   }
 
 
-  d_fso = fso;
+  enable_fractional_offsets(enable_fso,fso);
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
