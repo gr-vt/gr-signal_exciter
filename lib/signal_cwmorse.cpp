@@ -21,6 +21,7 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
     d_buffer_size(buff_size)
 {
   //printf("Init.\n");
+  get_indicator();
   set_seed(seed);
   //printf("Seeded.\n");
   d_burn = buff_size;
@@ -41,8 +42,9 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
   }
   else{
     d_interp = 1;
-    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+    tap_len = 23;
+    d_interp_taps = std::vector<float>(tap_len,0.);
+    d_interp_taps[(tap_len-1)/2] = 1.;
   }
 
   d_fso = fso;
@@ -325,28 +327,30 @@ Signal_CWMORSE::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
   }
 
-  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
+  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
 
-  memcpy( &d_proto_taps[0], &d_interp_taps[0],
-          d_interp_taps.size()*sizeof(float) );
+  std::vector<float> shifted_taps;
+  prototype_augemnt_fractional_delay(d_interp, 1., d_interp_taps, d_fso, shifted_taps);
 
 
-  //std::vector<float> shifted_taps;
-  //time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
-  std::vector<float> shifted_taps = d_proto_taps;
+  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
+
+  memcpy( &d_proto_taps[0], &shifted_taps[0],
+          shifted_taps.size()*sizeof(float) );
+  //std::vector<float> shifted_taps = d_proto_taps;
 
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);
 
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
   }
   //printf("OFDM:: taps init 0.\n");
 
-  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   //printf("OFDM:: taps filled.\n");
 

@@ -22,7 +22,7 @@
 #define INCLUDED_SIGNAL_EXCITER_RANDOM_SIGNAL_IMPL_H
 
 #include <signal_exciter/random_signal.h>
-#include <gnuradio/fft/fft.h>
+#include <gnuradio/fft/fft.h>//gain access to a shared fftw mutex
 #include <signal_exciter/signal_base.hpp>
 #include "signal_fm.hpp"
 #include "signal_dsb.hpp"

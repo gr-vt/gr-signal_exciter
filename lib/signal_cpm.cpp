@@ -22,7 +22,7 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
     d_notify_size(min_notify)
 {
   //printf("CPM INIT\n");
-
+  get_indicator();
   set_seed(seed);
 
   d_first_pass = true;
@@ -174,8 +174,9 @@ Signal_CPM::create_symbol_list()
     d_symbol_list[idx] = complexf(d_symbol_amps[idx],0.);
   }
 
-  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+  size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
+  d_proto_taps = std::vector<float>(tap_len,0.);
+  d_proto_taps[(tap_len-1)/2] = 1.;
 }
 
 void
@@ -306,11 +307,12 @@ Signal_CPM::load_firs()
   }
   d_hist = ts-1;
 
+  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
 
   d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
-  //std::vector<float> shifted_taps;
-  //time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
-  std::vector<float> shifted_taps = d_proto_taps;
+  std::vector<float> shifted_taps;
+  prototype_augemnt_fractional_delay(1., d_sps, d_proto_taps, d_fso, shifted_taps);
+  //std::vector<float> shifted_taps = d_proto_taps;
   d_frac_filt->set_taps(shifted_taps);
   d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
 }

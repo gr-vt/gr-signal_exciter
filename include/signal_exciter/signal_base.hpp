@@ -39,23 +39,46 @@ class Signal_Base
 //    static bool d_seeded;
 //    static int d_seed;
 
+    void convolve_2x_1( std::vector<float> &out,
+                        std::vector<float> &in2x,
+                        std::vector<float> &keep );
+
+    void convolve(std::vector<float> &out,
+                  std::vector<float> &a,
+                  std::vector<float> &b );
+
+    void norm_f(std::vector<float> &to_norm);
+    void norm_d(std::vector<double> &to_norm);
+
+    void print_f(std::string Name, float* vec, size_t len);
+    void print_fcr(std::string Name, complexf* vec, size_t len);
+    void print_d(std::string Name, double* vec, size_t len);
+
     virtual void auto_fill_symbols() = 0;
     virtual void auto_fill_signal() = 0;
 
     //For thread safe create of fftw objects.
     static boost::mutex s_mutex_fftw;
+    //static boost::mutex s_mutex_fso;
     static boost::mutex* d_mutex_ptr;
+    static size_t s_indicator;
 
   protected:
     boost::random_device d_rd;
     gr::random *d_rng;
+    size_t d_indicator;
 
     virtual boost::mutex& fftw_lock() const {return *d_mutex_ptr;}
+    //virtual boost::mutex& fso_lock() const {return s_mutex_fso;}
 
     void prototype_augemnt_fractional_delay(
-          double interp, std::vector<float> &proto,
-          double frac_delay, std::vector<float> &taps,
-          std::vector<float> &extended_proto);
+          double interp, double interpd, std::vector<float> &proto,
+          double frac_delay, std::vector<float> &taps);
+
+    void get_indicator(){
+      boost::mutex::scoped_lock scoped(fftw_lock());
+      d_indicator = s_indicator++;
+    }
 
   public:
     virtual ~Signal_Base() = 0;
@@ -63,7 +86,7 @@ class Signal_Base
     virtual void generate_signal(complexf* output, size_t sample_count) = 0;
     virtual void generate_symbols(complexf* output, size_t symbol_count) = 0;
 
-    static void set_mutex_pointer(boost::mutex* ext_mutex){ d_mutex_ptr = ext_mutex; }
+    static void set_fftw_mutex(boost::mutex* ext_mutex){ d_mutex_ptr = ext_mutex; }
 //    int get_seed();
 };
 

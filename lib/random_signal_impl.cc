@@ -50,7 +50,7 @@ namespace gr {
     {
 #ifndef SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
 #define SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
-      Signal_Base::set_mutex_pointer(&(gr::fft::planner::mutex()));
+      Signal_Base::set_fftw_mutex(&(gr::fft::planner::mutex()));
 #endif //SIGNAL_EXCITER_USING_GNURADIO_FFT_MUTEX
       /*printf("Got to the creation\n");
       roundone = true;*/

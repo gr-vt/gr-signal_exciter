@@ -19,6 +19,7 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
     d_symbol_count(0)
 {
   //printf("Init.\n");
+  get_indicator();
   set_seed(seed);
   //printf("Seeded.\n");
 
@@ -442,30 +443,36 @@ Signal_PAM::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
   }
 
-  size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
+  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
 
-  memcpy( &d_proto_taps[0], &d_pulse_shape[0],
-          d_pulse_shape.size()*sizeof(float) );
+  std::vector<float> shifted_taps;
+  prototype_augemnt_fractional_delay(d_sps, 1., d_pulse_shape, d_fso, shifted_taps);
+
+  //size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
+  //d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
+
+  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
+
+  memcpy( &d_proto_taps[0], &shifted_taps[0],
+          shifted_taps.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
     throw_runtime("signal_pam: error setting pulse shaping taps.\n");
   }
 
-  //std::vector<float> shifted_taps;
-  //time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
-  std::vector<float> shifted_taps = d_proto_taps;
+  //std::vector<float> shifted_taps = d_proto_taps;
 
   d_taps = std::vector< std::vector<float> >(intp);
 
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
   }
   //printf("PAM:: taps init 0.\n");
 
-  for(size_t idx = 0; idx < d_pulse_shape.size(); idx++){
-    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   //printf("PAM:: taps filled.\n");
 
