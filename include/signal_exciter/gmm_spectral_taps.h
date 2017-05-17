@@ -38,6 +38,7 @@ rho = [.29,.60,.08,.01,.02];
 class GMM_Spectral_Taps
 {
  private:
+  int                 d_mode;
   size_t              d_tap_count;
   float               d_samp_rate;
   bool                d_made;
@@ -72,6 +73,7 @@ class GMM_Spectral_Taps
  public:
   GMM_Spectral_Taps()
   {
+    d_mode = 0;
     d_tap_count = 0;
     d_mu = std::vector<float>(0);
     d_sigma = std::vector<float>(0);
@@ -81,8 +83,9 @@ class GMM_Spectral_Taps
     d_made = false;
   }
 
-  GMM_Spectral_Taps(size_t components, float* mus, float* sigmas, float* weights, float samp_rate, size_t tap_count)
+  GMM_Spectral_Taps(size_t components, float* mus, float* sigmas, float* weights, float samp_rate, size_t tap_count, int mode=0)
   {
+    d_mode = mode;
     d_mu      = std::vector<float>(mus, mus+components);
     d_sigma   = std::vector<float>(sigmas, sigmas+components);
     d_weight  = std::vector<float>(weights, weights+components);
@@ -111,7 +114,7 @@ class GMM_Spectral_Taps
 
   void get_taps(std::vector<float>& taps)
   {
-    if(d_made){
+    if(d_made && (d_mode==0)){
       taps = std::vector<float>(d_tap_count,0.);
       memset( d_fft_in, 0, sizeof(fftwf_complex)*d_tap_count );
       memset( d_fft_out, 0, sizeof(fftwf_complex)*d_tap_count );
@@ -122,7 +125,7 @@ class GMM_Spectral_Taps
       for(size_t kk = 0; kk < d_mu.size(); kk++){
         lmu = d_mu[kk]/d_samp_rate;
         lsig = d_sigma[kk]/d_samp_rate;
-        lw = d_weight[kk]/2.;
+        lw = d_weight[kk]/2;
         for(size_t idx = 0; idx < d_tap_count; idx++){
           ln = (d_freq[idx]-lmu)/lsig;
           d_fft_in[(int(idx)-int(offset))%d_tap_count][0] += (lw/std::sqrt(2.*M_PI*lsig*lsig)) * std::exp(-ln*ln/2.);
@@ -133,7 +136,7 @@ class GMM_Spectral_Taps
 
       fftwf_execute( d_ifft );
 
-      offset = (size_t)std::floor(float(d_tap_count)/2.);//fftshift
+      offset = (size_t)std::ceil(float(d_tap_count)/2.);//fftshift
       for(size_t idx = 0; idx < d_tap_count; idx++){
         taps[idx] = d_fft_out[(idx-offset)%d_tap_count][0];
       }
@@ -152,8 +155,67 @@ class GMM_Spectral_Taps
     }
   }
 
-  void set_params(size_t components, float* mus, float* sigmas, float* weights, float samp_rate, size_t tap_count)
+  void get_taps(std::vector<complexf>& taps)
   {
+    if(d_made && (d_mode!=0)){
+      taps = std::vector<complexf>(d_tap_count,complexf(0.,0.));
+      memset( d_fft_in, 0, sizeof(fftwf_complex)*d_tap_count );
+      memset( d_fft_out, 0, sizeof(fftwf_complex)*d_tap_count );
+      size_t offset = (size_t)std::ceil(float(d_tap_count)/2.);//ifftshift
+
+      float lmu,lsig,lw,ln;
+
+      if(d_mode > 0){
+        for(size_t kk = 0; kk < d_mu.size(); kk++){
+          lmu = d_mu[kk]/d_samp_rate;
+          lsig = d_sigma[kk]/d_samp_rate;
+          lw = d_weight[kk];
+          for(size_t idx = 0; idx < d_tap_count; idx++){
+            if((d_freq[idx]>=0.) && (idx!=0)){
+              ln = (d_freq[idx]-lmu)/lsig;
+              d_fft_in[(int(idx)-int(offset))%d_tap_count][0] += (lw/std::sqrt(2.*M_PI*lsig*lsig)) * std::exp(-ln*ln/2.);
+            }
+          }
+        }
+      }
+      else if(d_mode < 0){
+        for(size_t kk = 0; kk < d_mu.size(); kk++){
+          lmu = d_mu[kk]/d_samp_rate;
+          lsig = d_sigma[kk]/d_samp_rate;
+          lw = d_weight[kk];
+          for(size_t idx = 0; idx < d_tap_count; idx++){
+            if((d_freq[idx]<=0.) && (idx!=0)){
+              ln = (d_freq[idx]+lmu)/lsig;
+              d_fft_in[(int(idx)-int(offset))%d_tap_count][0] += (lw/std::sqrt(2.*M_PI*lsig*lsig)) * std::exp(-ln*ln/2.);
+            }
+          }
+        }
+      }
+
+      fftwf_execute( d_ifft );
+
+      offset = (size_t)std::ceil(float(d_tap_count)/2.);//fftshift
+      for(size_t idx = 0; idx < d_tap_count; idx++){
+        taps[idx] = *((complexf*) d_fft_out[(idx-offset)%d_tap_count]);
+      }
+
+      float pwr_chk = 0;
+      for(size_t idx = 0; idx < d_tap_count; idx++){
+        pwr_chk += (taps[idx]*std::conj(taps[idx])).real();
+      }
+      float scale = 1/std::sqrt(pwr_chk);
+      for(size_t idx = 0; idx < d_tap_count; idx++){
+        taps[idx] *= scale;
+      }
+    }
+    else{
+      taps = std::vector<complexf>(0);
+    }
+  }
+
+  void set_params(size_t components, float* mus, float* sigmas, float* weights, float samp_rate, size_t tap_count, int mode=0)
+  {
+    d_mode    = mode;
     d_mu      = std::vector<float>(mus, mus+components);
     d_sigma   = std::vector<float>(sigmas, sigmas+components);
     d_weight  = std::vector<float>(weights, weights+components);

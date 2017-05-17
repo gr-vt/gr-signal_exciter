@@ -316,7 +316,7 @@ int GenerateFlowGraph(system_var system_config,
           }
         }
 
-        Cprintf("Signal %lu is centered in channel %d with a channel center %1.3e.", sig_idx%8+1, sig_idx+1, synth_chan_center, synth_chan_centers[synth_chan_center]);
+        Cprintf("Signal %lu is centered in channel %lu with a channel center %1.3e.", size_t(sig_idx%8+1), sig_idx+1, synth_chan_center, synth_chan_centers[synth_chan_center]);
 
         xlate_freq = xlate_freq - synth_chan_centers[synth_chan_center];
 
