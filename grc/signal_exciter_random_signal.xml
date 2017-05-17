@@ -134,7 +134,7 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
-sig_params.frac_offset = $efso
+sig_params.frac_offset      = $efso
 #if $efso() in ('True')
 sig_params.frac_symb_offset = $fso
 #else
