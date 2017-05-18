@@ -2,7 +2,7 @@
 
 Website: https://github.com/gr-vt/gr-signal_exciter
 
-Last GNU Radio update: 5/1/17
+Last GNU Radio update: 5/15/17
 
 ## Installation
 
