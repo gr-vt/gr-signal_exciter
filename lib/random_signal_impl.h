@@ -32,6 +32,7 @@
 #include "signal_psk.hpp"
 #include "signal_qam.hpp"
 #include "signal_pam.hpp"
+#include "signal_ask.hpp"
 #include "signal_ofdm.hpp"
 #include "signal_cwmorse.hpp"
 #include "signal_cpm.hpp"

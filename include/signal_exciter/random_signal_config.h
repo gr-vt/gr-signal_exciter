@@ -39,7 +39,7 @@ namespace gr {
       PSK     = 6,
       QAM     = 7,
       PAM     = 8,
-      ASK     = 8,
+      ASK     = 15,
       OFDM    = 9,
       FSK     = 10,
       CPM     = 11,

@@ -125,6 +125,11 @@ namespace gr {
                               &d_params.pulse_shape[0],d_params.pulse_len,
                               seed,d_params.frac_offset,d_params.frac_symb_offset);
       }
+      else if(mod_type == ASK){
+        d_mod = new Signal_ASK(d_params.order,d_params.offset,d_params.sps,
+                              &d_params.pulse_shape[0],d_params.pulse_len,
+                              seed,d_params.frac_offset,d_params.frac_symb_offset);
+      }
       else if(mod_type == OFDM){
         d_mod = new Signal_OFDM(d_params.fftsize,d_params.cp_len,
                                 d_params.active_carriers,
