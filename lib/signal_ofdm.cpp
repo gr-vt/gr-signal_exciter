@@ -75,6 +75,8 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
   d_sym_counter = 0;
   items_written = 0;
 
+  enable_fractional_offsets(enable_fso,fso);
+
   if(tap_len){
     double power_check = 0.;
     d_interp_taps = std::vector<float>(tap_len);
@@ -104,9 +106,6 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
   }
 
   d_symbol_length = d_fftsize+d_cp_len;
-
-
-  enable_fractional_offsets(enable_fso,fso);
 
   d_align = volk_get_alignment();
 

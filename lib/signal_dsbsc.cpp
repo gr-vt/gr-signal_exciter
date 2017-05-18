@@ -38,6 +38,8 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
   }
   d_first_pass = true;
 
+  enable_fractional_offsets(enable_fso, fso);
+
   if(tap_len){
     double power_check = 0.;
     d_interp_taps = std::vector<float>(tap_len);
@@ -62,9 +64,6 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
       d_interp_taps = std::vector<float>(tap_len,1.);
     }
   }
-
-
-  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.

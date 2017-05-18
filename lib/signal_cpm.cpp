@@ -41,6 +41,8 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
 
   //printf("CPM ORDER\n");
 
+  enable_fractional_offsets(enable_fso, fso);
+
   create_symbol_list();
 
   d_rng = new gr::random(d_seed, 0, d_order);
@@ -74,9 +76,6 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   }
 
   //printf("CPM PHASE SHAPE\n");
-
-
-  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
 

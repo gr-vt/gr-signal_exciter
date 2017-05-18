@@ -28,6 +28,8 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
 
   d_first_pass = true;
 
+  enable_fractional_offsets(enable_fso, fso);
+
   if(tap_len){
     double power_check = 0.;
     d_interp_taps = std::vector<float>(tap_len);
@@ -52,8 +54,6 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
       d_interp_taps = std::vector<float>(tap_len,1.);
     }
   }
-
-  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
 

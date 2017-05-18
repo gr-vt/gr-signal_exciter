@@ -47,8 +47,8 @@ class Signal_Base
                   std::vector<float> &a,
                   std::vector<float> &b );
 
-    void norm_f(std::vector<float> &to_norm);
-    void norm_d(std::vector<double> &to_norm);
+    void norm_f(std::vector<float> &to_norm, float scale=1.);
+    void norm_d(std::vector<double> &to_norm, double scale=1.);
 
     void print_f(std::string Name, float* vec, size_t len);
     void print_fcr(std::string Name, complexf* vec, size_t len);

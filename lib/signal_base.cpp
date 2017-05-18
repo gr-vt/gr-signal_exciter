@@ -152,7 +152,7 @@ Signal_Base::prototype_augemnt_fractional_delay(
       for(size_t idx = 0; idx < ntaps; idx++){
         taps[idx] = decim_taps[half-htap+idx];
       }
-      norm_f(taps);
+      norm_f(taps, interp);
       //print_f("Taps", &taps[0], taps.size());
 
     }
@@ -162,6 +162,7 @@ Signal_Base::prototype_augemnt_fractional_delay(
   }
   else{
     taps = std::vector<float>( proto.begin(), proto.end() );
+    norm_f(taps,interp);
   }
 }
 
@@ -227,13 +228,13 @@ Signal_Base::convolve(std::vector<float> &out,
 }
 
 void
-Signal_Base::norm_f(std::vector<float> &to_norm)
+Signal_Base::norm_f(std::vector<float> &to_norm, float scale)
 {
   double wt = 0.;
   for(size_t idx = 0; idx < to_norm.size(); idx++){
     wt += to_norm[idx]*to_norm[idx];
   }
-  if(wt) wt = 1./std::sqrt(wt);
+  if(wt) wt = std::sqrt(scale/wt);
   else wt = 1.;
   for(size_t idx = 0; idx < to_norm.size(); idx++){
     to_norm[idx] *= wt;
@@ -241,13 +242,13 @@ Signal_Base::norm_f(std::vector<float> &to_norm)
 }
 
 void
-Signal_Base::norm_d(std::vector<double> &to_norm)
+Signal_Base::norm_d(std::vector<double> &to_norm, double scale)
 {
   double wt = 0.;
   for(size_t idx = 0; idx < to_norm.size(); idx++){
     wt += to_norm[idx]*to_norm[idx];
   }
-  if(wt) wt = 1./std::sqrt(wt);
+  if(wt) wt = std::sqrt(scale/wt);
   else wt = 1.;
   for(size_t idx = 0; idx < to_norm.size(); idx++){
     to_norm[idx] *= wt;
