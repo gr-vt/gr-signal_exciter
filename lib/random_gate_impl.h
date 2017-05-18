@@ -24,6 +24,7 @@
 #include <signal_exciter/random_gate.h>
 #include <gnuradio/random.h>
 #include <boost/random/random_device.hpp>
+#include <stdio.h>
 
 namespace gr {
   namespace signal_exciter {

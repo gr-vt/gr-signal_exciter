@@ -7,7 +7,7 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
                         float* sigma, float* weight, float max_freq,
                         size_t tap_count, int seed, bool norm,
                         float* interp_taps, size_t tap_len, int interp,
-                        float fso, bool enable, size_t buff_size,
+                        bool enable_fso, float fso, bool enable, size_t buff_size,
                         size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
@@ -19,10 +19,13 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
     d_agc(),
     d_norm(norm)
 {
+  get_indicator();
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  //boost::mutex::scoped_lock scoped_lock(fftw_lock());
+  (fftw_lock()).lock();
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
   generate_taps();
+  (fftw_lock()).unlock();
 
   d_rng = new gr::random(d_seed, 0, 1);
 
@@ -34,6 +37,8 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
     auto_fill_signal();
   }
   d_first_pass = true;
+
+  enable_fractional_offsets(enable_fso, fso);
 
   if(tap_len){
     double power_check = 0.;
@@ -49,11 +54,16 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
   }
   else{
     d_interp = 1;
-    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+    if(d_enable_fractional){
+      tap_len = 23;
+      d_interp_taps = std::vector<float>(tap_len,0.);
+      d_interp_taps[(tap_len-1)/2] = 1.;
+    }
+    else{
+      tap_len = 1;
+      d_interp_taps = std::vector<float>(tap_len,1.);
+    }
   }
-
-  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -251,19 +261,23 @@ Signal_DSB::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_fff(1,dummy_taps);
   }
 
-  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
-  memcpy( &d_proto_taps[0], &d_interp_taps[0],
-          d_interp_taps.size()*sizeof(float) );
+  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
+
   std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+  prototype_augemnt_fractional_delay(d_interp, 1., d_interp_taps, d_fso, shifted_taps);
+
+  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
+  memcpy( &d_proto_taps[0], &shifted_taps[0],
+          shifted_taps.size()*sizeof(float) );
+  //std::vector<float> shifted_taps = d_proto_taps;
   d_xtaps = std::vector< std::vector<float> >(intp);
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_xtaps[idx].resize(ts);
   }
-  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_xtaps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_xtaps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   for(size_t idx = 0; idx < intp; idx++){
     d_firs[idx]->set_taps(d_xtaps[idx]);

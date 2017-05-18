@@ -22,6 +22,7 @@
 #define INCLUDED_SIGNAL_EXCITER_ONE_PASS_GATE_IMPL_H
 
 #include <signal_exciter/one_pass_gate.h>
+#include <stdio.h>
 
 namespace gr {
   namespace signal_exciter {
