@@ -173,14 +173,14 @@ Signal_CPM::create_symbol_list()
     d_symbol_list[idx] = complexf(d_symbol_amps[idx],0.);
   }
 
-  if(d_enable_fractional){
+  //if(d_enable_fractional){
     size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
     d_proto_taps = std::vector<float>(tap_len,0.);
     d_proto_taps[(tap_len-1)/2] = 1.;
-  }
-  else{
-    d_proto_taps = std::vector<float>(1,1.);
-  }
+  //}
+  //else{
+  //  d_proto_taps = std::vector<float>(1,1.);
+  //}
 }
 
 void
