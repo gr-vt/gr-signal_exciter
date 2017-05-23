@@ -29,9 +29,10 @@
 typedef std::complex<float> complexf;
 typedef std::complex<double> complexd;
 
-#ifndef M_2_PIl
-#define M_2_PIl (2*M_PIl)
+#ifndef LM_2PI
+#define LM_2PI (2.l*3.14159265358979323846264338328l)
 #endif
+
 
 class Signal_Base
 {

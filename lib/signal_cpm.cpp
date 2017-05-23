@@ -242,7 +242,7 @@ Signal_CPM::filter( size_t nout, complexf* out )
     //pulled from gr::analog::fm
     d_phase_acm += d_filt_out[oo] * M_PI * d_h;
     //d_phase_acm = std::fmod( d_phase_acm + M_PI, M_2_PIl ) - M_PI;
-    gr::sincos(d_phase_acm, &oi, &oq);
+    gr::sincos(d_phase_acm, &oq, &oi);
     out[oo] = complexf(oi,oq);
 
 

@@ -36,6 +36,7 @@
 #include "signal_ofdm.hpp"
 #include "signal_cwmorse.hpp"
 #include "signal_cpm.hpp"
+#include "signal_fsk.hpp"
 
 namespace gr {
   namespace signal_exciter {

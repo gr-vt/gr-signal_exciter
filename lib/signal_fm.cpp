@@ -176,7 +176,7 @@ Signal_FM::filter( size_t nout, complexf* out )
 
   size_t oo(d_past2.size()), ii(0), oo2(0), ii2(0);
   size_t inc1(symbs_needed+d_past2.size());
-  float mod = M_2_PI*d_mod_idx;
+  float mod = LM_2PI*d_mod_idx;
 
   while( oo < inc1 ){
     d_cum += d_fir->filter( &d_filt_in[ii++] );
@@ -205,7 +205,7 @@ Signal_FM::filter( size_t nout, complexf* out )
 /*************************************************************************************
   d_symbol_cache = std::vector<complexf>(sample_count, complexf(0.,0.));
   generate_symbols( &d_symbol_cache[0], sample_count );
-  double mod = M_2_PIl*(d_mod_idx*d_fmax);
+  double mod = LM_2PI*(d_mod_idx*d_fmax);
   for(size_t idx = 0; idx < sample_count; idx++){
     d_cum += d_symbol_cache[idx].real();
     output[idx] = exp(complexf(0.,mod*d_cum));

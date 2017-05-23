@@ -39,6 +39,7 @@ list(APPEND signal_exciter_sources
     signal_pam.cpp
     signal_ask.cpp
     signal_cpm.cpp
+    signal_fsk.cpp
     signal_ofdm.cpp
     random_signal_impl.cc
     zero_counter_impl.cc

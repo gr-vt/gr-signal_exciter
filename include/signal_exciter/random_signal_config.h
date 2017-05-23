@@ -45,7 +45,8 @@ namespace gr {
       CPM     = 11,
       GMSK    = 12,
       MSK     = 13,
-      GFSK    = 14
+      GFSK    = 14,
+      NCFSK   = 16
     };
 
     struct SIGNAL_EXCITER_API sig_params

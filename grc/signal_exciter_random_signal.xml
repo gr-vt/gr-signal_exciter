@@ -134,6 +134,11 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
+#if $mtype() in ('signal_exciter.NCFSK')
+sig_params.order            = $order
+sig_params.sps              = $sps
+sig_params.mod_idx          = $mod_idx
+#end if
 sig_params.frac_offset      = $efso
 #if $efso() in ('True')
 sig_params.frac_symb_offset = $fso
@@ -222,6 +227,10 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
       <key>signal_exciter.CPM</key>
     </option>
     <option>
+      <name>Non-Cont. FSK</name>
+      <key>signal_exciter.NCFSK</key>
+    </option>
+    <option>
       <name>OFDM</name>
       <key>signal_exciter.OFDM</key>
     </option>
@@ -261,7 +270,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>2</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM', 'signal_exciter.NCFSK')
   none
 #else
   all
@@ -287,7 +296,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.NCFSK')
   none
 #else
   all
@@ -326,7 +335,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>0.75</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM','signal_exciter.NCFSK')
   none
 #else
   all

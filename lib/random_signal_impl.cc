@@ -195,6 +195,10 @@ namespace gr {
                               d_params.L,d_params.mod_idx,seed,
                               d_params.beta,NULL,0,d_params.frac_offset,d_params.frac_symb_offset);
       }
+      else if(mod_type == NCFSK){
+        d_mod = new Signal_FSK(d_params.order,d_params.sps,d_params.mod_idx,
+                                seed,d_params.frac_offset,d_params.frac_symb_offset);
+      }
       else{
         printf("UNKNOWN.\n");
       }
