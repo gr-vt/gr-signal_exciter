@@ -68,6 +68,7 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
 
 Signal_FM::~Signal_FM()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;

@@ -79,6 +79,7 @@ Signal_USB::Signal_USB(float mod_idx, size_t components, float* mu,
 
 Signal_USB::~Signal_USB()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;

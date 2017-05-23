@@ -79,6 +79,7 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
 
 Signal_DSBSC::~Signal_DSBSC()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;

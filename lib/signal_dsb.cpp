@@ -80,6 +80,7 @@ Signal_DSB::Signal_DSB(float mod_idx, size_t components, float* mu,
 
 Signal_DSB::~Signal_DSB()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;

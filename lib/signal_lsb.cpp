@@ -79,6 +79,7 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
 
 Signal_LSB::~Signal_LSB()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;
