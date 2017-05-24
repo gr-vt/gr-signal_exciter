@@ -164,6 +164,7 @@ add_custom_target(uninstall
 # Add subdirectories
 ########################################################################
 add_subdirectory(include/signal_exciter)
+add_subdirectory(include/eigen3/Eigen)
 add_subdirectory(lib)
 add_subdirectory(swig)
 add_subdirectory(python)
