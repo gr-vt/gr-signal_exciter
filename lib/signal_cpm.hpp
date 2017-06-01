@@ -70,6 +70,7 @@ class Signal_CPM : public Signal_Base
     Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type, int sps,
               int overlap, float mod_idx, int seed, double beta=0.3,
               float* phase_shape=NULL, size_t phase_shape_length=0,
+              float* augment_taps=NULL, size_t augment_length=0,
               bool enable_fso = false, float fso=0., bool enable=true, size_t buff_size=8192,
               size_t min_notify=512);
     ~Signal_CPM();

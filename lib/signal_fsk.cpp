@@ -6,6 +6,7 @@
 #include <algorithm>
 
 Signal_FSK::Signal_FSK(int order, int sps, float mod_idx, int seed,
+                      float* augment_taps, size_t augment_length,
                       bool enable_fso, float fso, bool enable,
                       size_t buff_size, size_t min_notify)
   : d_order(order),
@@ -40,6 +41,22 @@ Signal_FSK::Signal_FSK(int order, int sps, float mod_idx, int seed,
   enable_fractional_offsets(enable_fso, fso);
 
   d_f = (d_h/float(d_sps))/2.;
+
+  if(augment_length==0){
+    d_proto_taps = std::vector<float>(0);
+  }
+  else{
+    d_proto_taps = std::vector<float>(augment_length);
+    double pwr_chk = 0.;
+    for(size_t idx = 0; idx < augment_length; idx++){
+      d_proto_taps[idx] = augment_taps[idx];
+      pwr_chk = augment_taps[idx]*augment_taps[idx];
+    }
+    pwr_chk = 1./std::sqrt(pwr_chk);
+    for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+      d_proto_taps[idx] *= pwr_chk;
+    }
+  }
 
   create_symbol_list();
 
@@ -145,9 +162,11 @@ Signal_FSK::create_symbol_list()
 
   d_symbol_amps = std::vector<float>(reals.begin(),reals.end());
 
-  size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
-  d_proto_taps = std::vector<float>(tap_len,0.);
-  d_proto_taps[(tap_len-1)/2] = 1.;
+  if(d_proto_taps.size()==0){
+    size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
+    d_proto_taps = std::vector<float>(tap_len,0.);
+    d_proto_taps[(tap_len-1)/2] = 1.;
+  }
 }
 
 void
@@ -164,27 +183,31 @@ Signal_FSK::filter( size_t nout, complexf* out )
     d_samp_offset = (d_samp_offset+1)%d_sps;
   }
 
-  int needed = int(std::ceil(float(nout-remain)/float(d_sps)));
-  std::vector<complexf> temp(needed);
-  generate_symbols( &temp[0], needed );
+  if(!d_samp_offset){
+    int needed = int(std::ceil(float(int(nout)-remain)/float(d_sps)));
+    needed = (remain > nout) ? 0 : needed;
 
-  size_t idx(0);
-  while(oo < nout){
-    angle = (2.*M_PI*d_n)*(temp[idx].real());
-    gr::sincos(angle, &oq, &oi);
-    out[oo] = complexf(oi,oq);
-    d_n++;
-    oo++;
-    d_samp_offset = (d_samp_offset+1)%d_sps;
-    if(d_samp_offset == 0){
-      idx++;
+    std::vector<complexf> temp(needed);
+    generate_symbols( &temp[0], needed );
+
+    size_t idx(0);
+    while(oo < nout){
+      angle = (2.*M_PI*d_n)*(temp[idx].real());
+      gr::sincos(angle, &oq, &oi);
+      out[oo] = complexf(oi,oq);
+      d_n++;
+      oo++;
+      d_samp_offset = (d_samp_offset+1)%d_sps;
+      if(d_samp_offset == 0){
+        idx++;
+      }
     }
-  }
-  if(d_samp_offset){
-    d_symbol_cache = std::vector<complexf>( &temp[idx], &temp[idx+1] );
-  }
-  else{
-    d_symbol_cache = std::vector<complexf>(0);
+    if(d_samp_offset){
+      d_symbol_cache = std::vector<complexf>( &temp[idx], &temp[idx+1] );
+    }
+    else{
+      d_symbol_cache = std::vector<complexf>(0);
+    }
   }
 }
 

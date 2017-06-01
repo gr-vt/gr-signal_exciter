@@ -55,7 +55,9 @@ class Signal_FSK : public Signal_Base
 
   public:
     Signal_FSK(int order, int sps, float mod_idx, int seed,
-              bool enable_fso = false, float fso=0., bool enable=true, size_t buff_size=8192,
+              float* augment_taps=NULL, size_t augment_length=0,
+              bool enable_fso = false, float fso=0.,
+              bool enable=true, size_t buff_size=8192,
               size_t min_notify=512);
     ~Signal_FSK();
 

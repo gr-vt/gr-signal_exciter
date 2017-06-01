@@ -154,20 +154,46 @@ namespace gr {
                                   d_params.frac_offset,d_params.frac_symb_offset);
       }
       else if(mod_type == MSK){
-        d_mod = new Signal_CPM(2,gr::analog::cpm::LREC,
-                                d_params.sps,1,0.5,seed,0.,NULL,0,
-                                d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(2,gr::analog::cpm::LREC,
+                                  d_params.sps,1,0.5,seed,0.,NULL,0,NULL,0,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_CPM(2,gr::analog::cpm::LREC,
+                                  d_params.sps,1,0.5,seed,0.,NULL,0,
+                                  &d_params.pulse_shape[0],d_params.pulse_len,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else if(mod_type == GMSK){
-        d_mod = new Signal_CPM(2,gr::analog::cpm::GAUSSIAN,
-                                d_params.sps,d_params.L,0.5,
-                                seed,d_params.beta,NULL,0,
-                                d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(2,gr::analog::cpm::GAUSSIAN,
+                                  d_params.sps,d_params.L,0.5,
+                                  seed,d_params.beta,NULL,0,NULL,0,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_CPM(2,gr::analog::cpm::GAUSSIAN,
+                                  d_params.sps,d_params.L,0.5,
+                                  seed,d_params.beta,NULL,0,
+                                  &d_params.pulse_shape[0],d_params.pulse_len,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else if(mod_type == FSK){
-        d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::LREC,
-                                d_params.sps,1,d_params.mod_idx,seed,
-                                0.,NULL,0,d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::LREC,
+                                  d_params.sps,1,d_params.mod_idx,seed,
+                                  0.,NULL,0,NULL,0,d_params.frac_offset,
+                                  d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::LREC,
+                                  d_params.sps,1,d_params.mod_idx,seed,
+                                  0.,NULL,0,&d_params.pulse_shape[0],d_params.pulse_len,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else if(mod_type == GFSK){
         std::vector<float> gt = gr::filter::firdes::gaussian(1,d_params.sps,d_params.beta,d_params.L*d_params.sps);
@@ -183,21 +209,48 @@ namespace gr {
           }
           taps[idx] = summer;
         }
-        d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,
-                              d_params.sps,d_params.L,d_params.mod_idx,
-                              seed,d_params.beta,&taps[0],taps.size(),
-                              d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,
+                                d_params.sps,d_params.L,d_params.mod_idx,
+                                seed,d_params.beta,&taps[0],taps.size(),NULL,0,
+                                d_params.frac_offset,d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,
+                                d_params.sps,d_params.L,d_params.mod_idx,
+                                seed,d_params.beta,&taps[0],taps.size(),
+                                &d_params.pulse_shape[0],d_params.pulse_len,
+                                d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else if(mod_type == CPM){
         gr::analog::cpm::cpm_type ptype =
                         gr::analog::cpm::cpm_type(d_params.phase_type);
-        d_mod = new Signal_CPM(d_params.order,ptype,d_params.sps,
-                              d_params.L,d_params.mod_idx,seed,
-                              d_params.beta,NULL,0,d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(d_params.order,ptype,d_params.sps,
+                                d_params.L,d_params.mod_idx,seed,
+                                d_params.beta,NULL,0,NULL,0,
+                                d_params.frac_offset,d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_CPM(d_params.order,ptype,d_params.sps,
+                                d_params.L,d_params.mod_idx,seed,
+                                d_params.beta,NULL,0,
+                                &d_params.pulse_shape[0],d_params.pulse_len,
+                                d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else if(mod_type == NCFSK){
-        d_mod = new Signal_FSK(d_params.order,d_params.sps,d_params.mod_idx,
-                                seed,d_params.frac_offset,d_params.frac_symb_offset);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_FSK(d_params.order,d_params.sps,d_params.mod_idx,
+                                  seed,NULL,0,d_params.frac_offset,
+                                  d_params.frac_symb_offset);
+        }
+        else{
+          d_mod = new Signal_FSK(d_params.order,d_params.sps,d_params.mod_idx,
+                                  seed,&d_params.pulse_shape[0],d_params.pulse_len,
+                                  d_params.frac_offset,d_params.frac_symb_offset);
+        }
       }
       else{
         printf("UNKNOWN.\n");

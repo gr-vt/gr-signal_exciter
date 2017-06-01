@@ -145,6 +145,9 @@ sig_params.frac_symb_offset = $fso
 #else
 sig_params.frac_symb_offset = 0.
 #end if
+if $mtype() in ('signal_exciter.MSK','signal_exciter.GMSK','signal_exciter.FSK','signal_exciter.GFSK','signal_exciter.CPM','signal_exciter.NCFSK')
+sig_params.pulse_len = 0
+#end if
 
 #set $sp_id = 'sig_params_%s_'%$id
 $sp_id = sig_params

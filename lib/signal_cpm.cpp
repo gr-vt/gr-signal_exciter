@@ -8,7 +8,9 @@
 Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
                       int sps, int overlap, float mod_idx, int seed,
                       double beta, float* phase_shape,
-                      size_t phase_shape_length, bool enable_fso, float fso, bool enable,
+                      size_t phase_shape_length,
+                      float* augment_taps, size_t augment_length,
+                      bool enable_fso, float fso, bool enable,
                       size_t buff_size, size_t min_notify)
   : d_order(order),
     d_sps(sps),
@@ -42,6 +44,22 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   //printf("CPM ORDER\n");
 
   enable_fractional_offsets(enable_fso, fso);
+
+  if(augment_length==0){
+    d_proto_taps = std::vector<float>(0);
+  }
+  else{
+    d_proto_taps = std::vector<float>(augment_length);
+    double pwr_chk = 0.;
+    for(size_t idx = 0; idx < augment_length; idx++){
+      d_proto_taps[idx] = augment_taps[idx];
+      pwr_chk = augment_taps[idx]*augment_taps[idx];
+    }
+    pwr_chk = 1./std::sqrt(pwr_chk);
+    for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+      d_proto_taps[idx] *= pwr_chk;
+    }
+  }
 
   create_symbol_list();
 
@@ -173,14 +191,11 @@ Signal_CPM::create_symbol_list()
     d_symbol_list[idx] = complexf(d_symbol_amps[idx],0.);
   }
 
-  //if(d_enable_fractional){
+  if(d_proto_taps.size()==0){
     size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
     d_proto_taps = std::vector<float>(tap_len,0.);
     d_proto_taps[(tap_len-1)/2] = 1.;
-  //}
-  //else{
-  //  d_proto_taps = std::vector<float>(1,1.);
-  //}
+  }
 }
 
 void
