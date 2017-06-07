@@ -19,8 +19,10 @@ Signal_FSK::Signal_FSK(int order, int sps, float mod_idx, int seed,
     d_notify_size(min_notify)
 {
   //printf("FSK INIT\n");
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
 
   d_first_pass = true;
 

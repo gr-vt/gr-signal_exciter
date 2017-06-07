@@ -65,7 +65,7 @@ class Signal_Base
     static size_t s_indicator;
 
   protected:
-    boost::random_device d_rd;
+    boost::random_device *d_rd;
     gr::random *d_rng;
     size_t d_indicator;
 

@@ -16,8 +16,10 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
     d_buffer_size(buff_size),
     d_notify_size(min_notify)
 {
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
   //boost::mutex::scoped_lock scoped_lock(fftw_lock());
   (fftw_lock()).lock();
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);

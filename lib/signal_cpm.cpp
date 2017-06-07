@@ -24,8 +24,10 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
     d_notify_size(min_notify)
 {
   //printf("CPM INIT\n");
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
 
   d_first_pass = true;
 

@@ -83,7 +83,7 @@ class Signal_CPM : public Signal_Base
     void set_seed(int seed)
     {
       d_seed = seed;
-      if(d_seed < 0) d_seed = d_rd();
+      if(d_seed < 0) d_seed = (*d_rd)();
     }
 };
 #endif /* INCLUDED_SIGNAL_CPM_HPP */

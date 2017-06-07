@@ -89,7 +89,7 @@ class Signal_CWMORSE : public Signal_Base
     void set_seed(int seed)
     {
       d_seed = seed;
-      if(d_seed < 0) d_seed = d_rd();
+      if(d_seed < 0) d_seed = (*d_rd)();
     }
 
 };

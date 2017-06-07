@@ -19,8 +19,10 @@ Signal_QAM::Signal_QAM(int order, float offset, int sps, float* pulse_shape, siz
     d_symbol_count(0)
 {
   //printf("Init.\n");
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
   //printf("Seeded.\n");
 
   double power_check = 0.;

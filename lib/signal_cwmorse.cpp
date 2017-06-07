@@ -21,8 +21,10 @@ Signal_CWMORSE::Signal_CWMORSE(int char_per_word, float words_per_minute,
     d_buffer_size(buff_size)
 {
   //printf("Init.\n");
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
   //printf("Seeded.\n");
   d_burn = buff_size;
 

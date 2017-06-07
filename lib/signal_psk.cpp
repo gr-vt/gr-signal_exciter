@@ -20,8 +20,10 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     d_samp_gen_count(0)
 {
   //printf("PSK::Init.\n");
+  d_rd = new boost::random_device();
   get_indicator();
   set_seed(seed);
+  delete d_rd;
   //printf("PSK::Seeded.\n");
 
   double power_check = 0.;
