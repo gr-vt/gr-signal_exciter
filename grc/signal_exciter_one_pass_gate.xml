@@ -2,7 +2,7 @@
 <block>
   <name>One Pass Gate</name>
   <key>signal_exciter_one_pass_gate</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <make>signal_exciter.one_pass_gate($samp_rate, $off_duration, $on_duration, $consume)</make>
 

@@ -2,7 +2,7 @@
 <block>
   <name>gmm</name>
   <key>signal_exciter_gmm</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <make>signal_exciter.gmm($sigma1, $sigma2, $fmax, $thresh, $seed)</make>
 

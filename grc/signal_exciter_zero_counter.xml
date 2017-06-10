@@ -2,7 +2,7 @@
 <block>
   <name>Zero Counter</name>
   <key>signal_exciter_zero_counter</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <make>signal_exciter.zero_counter($(type.fcn))</make>
 

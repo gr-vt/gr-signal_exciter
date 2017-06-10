@@ -2,7 +2,7 @@
 <block>
   <name>CPM Hier</name>
   <key>signal_exciter_cpm_hier</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter
 from gnuradio import analog
 from math import pi</import>

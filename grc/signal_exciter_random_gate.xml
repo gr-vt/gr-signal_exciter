@@ -2,7 +2,7 @@
 <block>
   <name>Random Gate</name>
   <key>signal_exciter_random_gate</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <make>signal_exciter.random_gate($samp_rate, $min_off_dur, $max_off_dur, $min_on_dur, $max_on_dur, $seed)</make>
 

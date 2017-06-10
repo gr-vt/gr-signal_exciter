@@ -2,7 +2,7 @@
 <block>
   <name>Random Signal</name>
   <key>signal_exciter_random_signal</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <import>from gnuradio.analog import cpm</import>
 	<make>None
