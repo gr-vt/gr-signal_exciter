@@ -46,7 +46,8 @@ list(APPEND signal_exciter_sources
     cpm_hier_impl.cc
     periodic_gate_impl.cc
     random_gate_impl.cc
-    one_pass_gate_impl.cc )
+    one_pass_gate_impl.cc
+    whiten_and_compress_block_impl.cc )
 
 set(signal_exciter_sources "${signal_exciter_sources}" PARENT_SCOPE)
 if(NOT signal_exciter_sources)

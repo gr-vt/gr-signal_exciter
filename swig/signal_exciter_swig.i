@@ -24,6 +24,7 @@
 #include "signal_exciter/random_gate.h"
 #include "signal_exciter/one_pass_gate.h"
 #include "signal_exciter/gmm.h"
+#include "signal_exciter/whiten_and_compress_block.h"
 %}
 
 namespace std{
@@ -47,3 +48,5 @@ GR_SWIG_BLOCK_MAGIC2(signal_exciter, random_gate);
 GR_SWIG_BLOCK_MAGIC2(signal_exciter, one_pass_gate);
 %include "signal_exciter/gmm.h"
 GR_SWIG_BLOCK_MAGIC2(signal_exciter, gmm);
+%include "signal_exciter/whiten_and_compress_block.h"
+GR_SWIG_BLOCK_MAGIC2(signal_exciter, whiten_and_compress_block);

@@ -23,5 +23,6 @@ install(FILES
     signal_exciter_periodic_gate.xml
     signal_exciter_random_gate.xml
     signal_exciter_one_pass_gate.xml
-    signal_exciter_gmm.xml DESTINATION share/gnuradio/grc/blocks
+    signal_exciter_gmm.xml
+    signal_exciter_whiten_and_compress_block.xml DESTINATION share/gnuradio/grc/blocks
 )

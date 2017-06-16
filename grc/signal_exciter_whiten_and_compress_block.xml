@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<block>
+  <name>WaC Block</name>
+  <key>signal_exciter_whiten_and_compress_block</key>
+  <category>[SaikWolf]/Signal Exciter</category>
+  <import>import signal_exciter</import>
+  <make>signal_exciter.whiten_and_compress_block($blocksize, $snr_db, $seed)</make>
+
+  <param>
+    <name>Block Size</name>
+    <key>blocksize</key>
+    <value>256</value>
+    <type>int</type>
+  </param>
+  <param>
+    <name>SNR (dB)</name>
+    <key>snr_db</key>
+    <value>20.</value>
+    <type>float</type>
+  </param>
+  <param>
+    <name>Seed</name>
+    <key>seed</key>
+    <value>-1</value>
+    <type>int</type>
+  </param>
+
+
+  <sink>
+    <name>in</name>
+    <type>complex</type>
+  </sink>
+
+  <source>
+    <name>out</name>
+    <type>short</type>
+  </source>
+
+  <doc>
+This block takes a clean signal at precision fc32 and adds noise to equal to snr_db, then compresses the combined noisy signal to the full extent allowable within a given blocksize input contraint into interleaved int32_t.
+
+For example for a blocksize of 2 and input [(1.0+0.j), (0.707-.707j)] the output would be [32767,0,23166,-23166]
+  </doc>
+</block>
