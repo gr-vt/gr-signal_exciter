@@ -45,12 +45,14 @@ namespace gr {
     {
      private:
       sig_params d_params;
+      signal_parameters d_parameters;
       Signal_Base* d_mod;
       bool roundone;
 
      public:
       //random_signal_impl(int seed=-1);
       random_signal_impl(sig_params sig, int seed=-1);
+      random_signal_impl(const signal_parameters &sig, int seed=-1);
       ~random_signal_impl();
 
       // Where all the action really happens

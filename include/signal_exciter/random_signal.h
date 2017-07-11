@@ -51,6 +51,7 @@ namespace gr {
        */
       //static sptr make(int seed=-1);
       static sptr make(sig_params sig, int seed=-1);
+      static sptr make(const signal_parameters &sig, int seed=-1);
     };
 
   } // namespace signal_exciter

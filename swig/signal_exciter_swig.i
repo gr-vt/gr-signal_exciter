@@ -27,6 +27,8 @@
 #include "signal_exciter/whiten_and_compress_block.h"
 %}
 
+%rename(__assign__) *::operator=;
+
 namespace std{
   %template(FloatVector) vector<float>;
   %template(SizeVector) vector<size_t>;
@@ -50,3 +52,4 @@ GR_SWIG_BLOCK_MAGIC2(signal_exciter, one_pass_gate);
 GR_SWIG_BLOCK_MAGIC2(signal_exciter, gmm);
 %include "signal_exciter/whiten_and_compress_block.h"
 GR_SWIG_BLOCK_MAGIC2(signal_exciter, whiten_and_compress_block);
+
