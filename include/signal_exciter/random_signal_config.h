@@ -22,6 +22,9 @@
 #ifndef INCLUDED_SIGNAL_EXCITER_RANDOM_SIGNAL_CONFIG_H
 #define INCLUDED_SIGNAL_EXCITER_RANDOM_SIGNAL_CONFIG_H
 
+#include <cstddef>
+#include <cstdlib>
+#include <cstdio>
 #include <signal_exciter/api.h>
 #include <vector>
 #include <gnuradio/analog/cpm.h>
@@ -120,7 +123,7 @@ namespace gr {
 
     class SIGNAL_EXCITER_API signal_parameters
     {
-     private:
+     protected:
       sig_type_t mod;                       // Base signal type (OFDM)
       sig_type_t type;                      // Signal Type
       bool ops_gate;                        // Use one pass gate (OPG)?
@@ -453,6 +456,83 @@ namespace gr {
       size_t get_mu_size(){ return mu.size(); }
       size_t get_sigma_size(){ return sigma.size(); }
       size_t get_weight_size(){ return weight.size(); }
+
+      void print_params() const
+      {
+        printf("mod = %d\n",mod);
+        printf("type = %d\n",type);
+        printf("ops_gate = %d\n",ops_gate);
+        printf("per_gate = %d\n",per_gate);
+        printf("rnd_gate = %d\n",rnd_gate);
+        printf("frac_offset = %d\n",frac_offset);
+        printf("pilot_per_frame = %d\n",pilot_per_frame);
+        printf("add_sync = %d\n",add_sync);
+        printf("base_word = %d\n",base_word);
+        printf("am_norm = %d\n",am_norm);
+        printf("fc = %1.8e\n",fc);
+        printf("gain = %1.8e\n",gain);
+        printf("fs = %1.8e\n",fs);
+        printf("ops_gate_off = %1.8e\n",ops_gate_off);
+        printf("ops_gate_on = %1.8e\n",ops_gate_on);
+        printf("per_gate_off = %1.8e\n",per_gate_off);
+        printf("per_gate_on = %1.8e\n",per_gate_on);
+        printf("per_gate_offset = %1.8e\n",per_gate_offset);
+        printf("rnd_gate_off_min = %1.8e\n",rnd_gate_off_min);
+        printf("rnd_gate_off_max = %1.8e\n",rnd_gate_off_max);
+        printf("rnd_gate_on_min = %1.8e\n",rnd_gate_on_min);
+        printf("rnd_gate_on_max = %1.8e\n",rnd_gate_on_max);
+        printf("frac_symb_offset = %1.8e\n",frac_symb_offset);
+        printf("offset = %1.8e\n",offset);
+        printf("mod_idx = %1.8e\n",mod_idx);
+        printf("backoff = %1.8e\n",backoff);
+        printf("words_per_minute = %1.8e\n",words_per_minute);
+        printf("beta = %1.8e\n",beta);
+        printf("f_max = %1.8e\n",f_max);
+        printf("order = %d\n",order);
+        printf("sps = %d\n",sps);
+        printf("char_per_word = %d\n",char_per_word);
+        printf("phase_type = %d\n",phase_type);
+        printf("L = %u\n",L);
+        printf("pulse_len = %lu\n",pulse_len);
+        printf("fftsize = %lu\n",fftsize);
+        printf("cp_len = %lu\n",cp_len);
+        printf("active_carriers = %lu\n",active_carriers);
+        printf("syms_per_frame = %lu\n",syms_per_frame);
+        printf("samp_overlap = %lu\n",samp_overlap);
+        printf("pilot_count = %lu\n",pilot_count);
+        printf("components = %lu\n",components);
+        printf("spectral_len = %lu\n",spectral_len);
+        printf("pilot_locations = [");
+        for(size_t idx = 0; idx < pilot_locations.size(); idx++){
+          printf(" %lu",pilot_locations[idx]);
+        }
+        printf("]\n");
+        printf("pulse_shape = [");
+        for(size_t idx = 0; idx < pulse_shape.size(); idx++){
+          printf(" %1.8e",pulse_shape[idx]);
+        }
+        printf("]\n");
+        printf("taper = [");
+        for(size_t idx = 0; idx < taper.size(); idx++){
+          printf(" %1.8e",taper[idx]);
+        }
+        printf("]\n");
+        printf("mu = [");
+        for(size_t idx = 0; idx < mu.size(); idx++){
+          printf(" %1.8e",mu[idx]);
+        }
+        printf("]\n");
+        printf("sigma = [");
+        for(size_t idx = 0; idx < sigma.size(); idx++){
+          printf(" %1.8e",sigma[idx]);
+        }
+        printf("]\n");
+        printf("weight = [");
+        for(size_t idx = 0; idx < weight.size(); idx++){
+          printf(" %1.8e",weight[idx]);
+        }
+        printf("]\n");
+      }
 
     };
 
