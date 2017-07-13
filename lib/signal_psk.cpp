@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        bool enable_fso, float fso, bool enable, size_t buff_size, size_t min_notify)
+                        bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -81,7 +81,6 @@ Signal_PSK::Signal_PSK(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
-  enable_fractional_offsets(enable_fso, fso);
   // Enable background threads for signal generation parallel processing.
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -340,46 +339,35 @@ Signal_PSK::auto_fill_signal()
 void
 Signal_PSK::load_firs()
 {
-  size_t interp = size_t(d_sps);
+  size_t intp = size_t(d_sps);
 
-  d_firs = std::vector< gr::filter::kernel::fir_filter_ccf* >(interp);
+  d_firs = std::vector< gr::filter::kernel::fir_filter_ccf* >(intp);
   std::vector<float> dummy_taps;
-  for(size_t samp_offset = 0; samp_offset < interp; samp_offset++){
+  for(size_t samp_offset = 0; samp_offset < intp; samp_offset++){
     d_firs[samp_offset] = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
   }
 
-  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
+  size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
+  memcpy( &d_proto_taps[0], &d_pulse_shape[0],
+          d_pulse_shape.size()*sizeof(float) );
 
-  std::vector<float> shifted_taps;
-  prototype_augemnt_fractional_delay(d_sps, 1., d_pulse_shape, d_fso, shifted_taps);
-
-  //size_t leftover = (interp - (d_pulse_shape.size() % interp))%interp;
-  //d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
-
-  size_t leftover = (interp - (shifted_taps.size() % interp))%interp;
-  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
-
-  memcpy( &d_proto_taps[0], &shifted_taps[0],
-          shifted_taps.size()*sizeof(float) );
-
-  if( d_proto_taps.size() % interp ){
+  if( d_proto_taps.size() % intp ){
     throw_runtime("signal_psk: error setting pulse shaping taps.\n");
   }
 
-  //std::vector<float> shifted_taps = d_proto_taps;
+  d_taps = std::vector< std::vector<float> >(intp);
 
-  d_taps = std::vector< std::vector<float> >(interp);
-
-  size_t taps_per_branch = d_proto_taps.size()/interp;
-  for(size_t branch = 0; branch < interp; branch++){
+  size_t taps_per_branch = d_proto_taps.size()/intp;
+  for(size_t branch = 0; branch < intp; branch++){
     d_taps[branch].resize(taps_per_branch);
   }
 
   for(size_t tap_idx = 0; tap_idx < d_proto_taps.size(); tap_idx++){
-    d_taps[tap_idx % interp][tap_idx/interp] = d_proto_taps[tap_idx];
+    d_taps[tap_idx % intp][tap_idx/intp] = d_proto_taps[tap_idx];
   }
 
-  for(size_t branch = 0; branch < interp; branch++){
+  for(size_t branch = 0; branch < intp; branch++){
     d_firs[branch]->set_taps(d_taps[branch]);
   }
 

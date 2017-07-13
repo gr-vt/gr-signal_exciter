@@ -7,7 +7,7 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
                           float* sigma, float* weight, float max_freq,
                           size_t tap_count, int seed, bool norm,
                           float* interp_taps, size_t tap_len, int interp,
-                          bool enable_fso, float fso, bool enable, size_t buff_size,
+                          bool enable, size_t buff_size,
                           size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
@@ -40,8 +40,6 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
   }
   d_first_pass = true;
 
-  enable_fractional_offsets(enable_fso, fso);
-
   if(tap_len){
     double power_check = 0.;
     d_interp_taps = std::vector<float>(tap_len);
@@ -56,15 +54,8 @@ Signal_DSBSC::Signal_DSBSC(float mod_idx, size_t components, float* mu,
   }
   else{
     d_interp = 1;
-    if(d_enable_fractional){
-      tap_len = 23;
-      d_interp_taps = std::vector<float>(tap_len,0.);
-      d_interp_taps[(tap_len-1)/2] = 1.;
-    }
-    else{
-      tap_len = 1;
-      d_interp_taps = std::vector<float>(tap_len,1.);
-    }
+    tap_len = 1;
+    d_interp_taps = std::vector<float>(tap_len,1.);
   }
 
   d_align = volk_get_alignment();
@@ -251,16 +242,12 @@ Signal_DSBSC::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_fff(1,dummy_taps);
   }
 
-  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
 
-  std::vector<float> shifted_taps;
-  prototype_augemnt_fractional_delay(d_interp, 1., d_interp_taps, d_fso, shifted_taps);
+  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
+  memcpy( &d_proto_taps[0], &d_interp_taps[0],
+          d_interp_taps.size()*sizeof(float) );
 
-  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
-  memcpy( &d_proto_taps[0], &shifted_taps[0],
-          shifted_taps.size()*sizeof(float) );
-  //std::vector<float> shifted_taps = d_proto_taps;
   d_xtaps = std::vector< std::vector<float> >(intp);
   size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){

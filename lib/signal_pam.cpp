@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        bool enable_fso, float fso, bool enable, size_t buff_size, size_t min_notify)
+                        bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -72,8 +72,6 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
-
-  enable_fractional_offsets(enable_fso, fso);
 
   d_align = volk_get_alignment();
 
@@ -445,25 +443,14 @@ Signal_PAM::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
   }
 
-  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
-
-  std::vector<float> shifted_taps;
-  prototype_augemnt_fractional_delay(d_sps, 1., d_pulse_shape, d_fso, shifted_taps);
-
-  //size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
-  //d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
-
-  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
-
-  memcpy( &d_proto_taps[0], &shifted_taps[0],
-          shifted_taps.size()*sizeof(float) );
+  size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
+  memcpy( &d_proto_taps[0], &d_pulse_shape[0],
+          d_pulse_shape.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
     throw_runtime("signal_pam: error setting pulse shaping taps.\n");
   }
-
-  //std::vector<float> shifted_taps = d_proto_taps;
 
   d_taps = std::vector< std::vector<float> >(intp);
 

@@ -64,7 +64,6 @@ namespace gr {
       bool ops_gate;                        // Use one pass gate (OPG)?
       bool per_gate;                        // Use periodic gate (PG)?
       bool rnd_gate;                        // Use random gate   (RG)?
-      bool frac_offset;                     // Use fractional offset?
       float ops_gate_off;                   // OPG inital off duration
       float ops_gate_on;                    // OPG on duration
       float per_gate_off;                   // PG off duration
@@ -74,7 +73,6 @@ namespace gr {
       float rnd_gate_off_max;               // RG maximum off duration
       float rnd_gate_on_min;                // RG minimum on duration
       float rnd_gate_on_max;                // RG maximum on duartion
-      float frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
       // Unique to signal sets
       sig_type_t mod;                       // Base signal type (OFDM)
       int order;                            // Digital Modulation Order
@@ -129,7 +127,6 @@ namespace gr {
       bool ops_gate;                        // Use one pass gate (OPG)?
       bool per_gate;                        // Use periodic gate (PG)?
       bool rnd_gate;                        // Use random gate   (RG)?
-      bool frac_offset;                     // Use fractional offset?
       bool pilot_per_frame;                 // True: Pilots are defined per frame/ False: per symbol
       bool add_sync;                        // Add full fftsize Schmidl & Cox sync preamble per frame
       bool base_word;                       // base_word ? PARIS : CODEX -> set's the Fs of signal
@@ -146,7 +143,6 @@ namespace gr {
       float rnd_gate_off_max;               // RG maximum off duration
       float rnd_gate_on_min;                // RG minimum on duration
       float rnd_gate_on_max;                // RG maximum on duartion
-      float frac_symb_offset;               // Fractional Symbol Offset (pairs with interp)
       float offset;                         // Rotate the symbols?
       float mod_idx;                        // Modulation index (analog mods)
       float backoff;                        // OFDM digital backoff to avoid clipping (dB)
@@ -182,7 +178,6 @@ namespace gr {
         ops_gate = false;
         per_gate = false;
         rnd_gate = false;
-        frac_offset = false;
         pilot_per_frame = false;
         add_sync = false;
         base_word = false;
@@ -199,7 +194,6 @@ namespace gr {
         rnd_gate_off_max = 0.;
         rnd_gate_on_min = 0.;
         rnd_gate_on_max = 0.;
-        frac_symb_offset = 0.;
         offset = 0.;
         mod_idx = 0.;
         backoff = 0.;
@@ -235,7 +229,6 @@ namespace gr {
         ops_gate = rhs.ops_gate;
         per_gate = rhs.per_gate;
         rnd_gate = rhs.rnd_gate;
-        frac_offset = rhs.frac_offset;
         pilot_per_frame = rhs.pilot_per_frame;
         add_sync = rhs.add_sync;
         base_word = rhs.base_word;
@@ -252,7 +245,6 @@ namespace gr {
         rnd_gate_off_max = rhs.rnd_gate_off_max;
         rnd_gate_on_min = rhs.rnd_gate_on_min;
         rnd_gate_on_max = rhs.rnd_gate_on_max;
-        frac_symb_offset = rhs.frac_symb_offset;
         offset = rhs.offset;
         mod_idx = rhs.mod_idx;
         backoff = rhs.backoff;
@@ -288,7 +280,6 @@ namespace gr {
         ops_gate = rhs.ops_gate;
         per_gate = rhs.per_gate;
         rnd_gate = rhs.rnd_gate;
-        frac_offset = rhs.frac_offset;
         pilot_per_frame = rhs.pilot_per_frame;
         add_sync = rhs.add_sync;
         base_word = rhs.base_word;
@@ -305,7 +296,6 @@ namespace gr {
         rnd_gate_off_max = rhs.rnd_gate_off_max;
         rnd_gate_on_min = rhs.rnd_gate_on_min;
         rnd_gate_on_max = rhs.rnd_gate_on_max;
-        frac_symb_offset = rhs.frac_symb_offset;
         offset = rhs.offset;
         mod_idx = rhs.mod_idx;
         backoff = rhs.backoff;
@@ -344,7 +334,6 @@ namespace gr {
       void set_ops_gate(bool new_ops_gate){ ops_gate = new_ops_gate;}
       void set_per_gate(bool new_per_gate){ per_gate = new_per_gate;}
       void set_rnd_gate(bool new_rnd_gate){ rnd_gate = new_rnd_gate;}
-      void set_frac_offset(bool new_frac_offset){ frac_offset = new_frac_offset;}
       void set_pilot_per_frame(bool new_pilot_per_frame){ pilot_per_frame = new_pilot_per_frame;}
       void set_add_sync(bool new_add_sync){ add_sync = new_add_sync;}
       void set_base_word(bool new_base_word){ base_word = new_base_word;}
@@ -361,7 +350,6 @@ namespace gr {
       void set_rnd_gate_off_max(float new_rnd_gate_off_max){ rnd_gate_off_max = new_rnd_gate_off_max;}
       void set_rnd_gate_on_min(float new_rnd_gate_on_min){ rnd_gate_on_min = new_rnd_gate_on_min;}
       void set_rnd_gate_on_max(float new_rnd_gate_on_max){ rnd_gate_on_max = new_rnd_gate_on_max;}
-      void set_frac_symb_offset(float new_frac_symb_offset){ frac_symb_offset = new_frac_symb_offset;}
       void set_offset(float new_offset){ offset = new_offset;}
       void set_mod_idx(float new_mod_idx){ mod_idx = new_mod_idx;}
       void set_backoff(float new_backoff){ backoff = new_backoff;}
@@ -400,7 +388,6 @@ namespace gr {
       bool get_ops_gate(){ return ops_gate; }
       bool get_per_gate(){ return per_gate; }
       bool get_rnd_gate(){ return rnd_gate; }
-      bool get_frac_offset(){ return frac_offset; }
       bool get_pilot_per_frame(){ return pilot_per_frame; }
       bool get_add_sync(){ return add_sync; }
       bool get_base_word(){ return base_word; }
@@ -417,7 +404,6 @@ namespace gr {
       float get_rnd_gate_off_max(){ return rnd_gate_off_max; }
       float get_rnd_gate_on_min(){ return rnd_gate_on_min; }
       float get_rnd_gate_on_max(){ return rnd_gate_on_max; }
-      float get_frac_symb_offset(){ return frac_symb_offset; }
       float get_offset(){ return offset; }
       float get_mod_idx(){ return mod_idx; }
       float get_backoff(){ return backoff; }
@@ -464,7 +450,6 @@ namespace gr {
         printf("ops_gate = %d\n",ops_gate);
         printf("per_gate = %d\n",per_gate);
         printf("rnd_gate = %d\n",rnd_gate);
-        printf("frac_offset = %d\n",frac_offset);
         printf("pilot_per_frame = %d\n",pilot_per_frame);
         printf("add_sync = %d\n",add_sync);
         printf("base_word = %d\n",base_word);
@@ -481,7 +466,6 @@ namespace gr {
         printf("rnd_gate_off_max = %1.8e\n",rnd_gate_off_max);
         printf("rnd_gate_on_min = %1.8e\n",rnd_gate_on_min);
         printf("rnd_gate_on_max = %1.8e\n",rnd_gate_on_max);
-        printf("frac_symb_offset = %1.8e\n",frac_symb_offset);
         printf("offset = %1.8e\n",offset);
         printf("mod_idx = %1.8e\n",mod_idx);
         printf("backoff = %1.8e\n",backoff);

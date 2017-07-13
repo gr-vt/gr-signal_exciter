@@ -109,32 +109,12 @@ find_package(Doxygen)
 # components required to the list of GR_REQUIRED_COMPONENTS (in all
 # caps such as FILTER or FFT) and change the version to the minimum
 # API compatible version required.
-set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS FILTER DIGITAL ANALOG CHANNELS UHD)
+set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS FILTER DIGITAL ANALOG CHANNELS)
 find_package(Gnuradio "3.7.2" REQUIRED)
 
 if(NOT CPPUNIT_FOUND)
     message(FATAL_ERROR "CppUnit required to compile signal_exciter")
 endif()
-
-########################################################################
-# Find eigen3
-########################################################################
-find_package(PkgConfig REQUIRED)
-set( ENV{PKG_CONFIG_PATH} "$ENV{PAK_CONFIG_PATH}:${CMAKE_INSTALL_PREFIX}/share/pkgconfig" )
-pkg_search_module(EIGEN eigen3)
-
-if(NOT EIGEN_FOUND)
-message(STATUS "Eigen3 not found, installing eigen3 headers and pkgconfig.")
-set(PKGCONFIG_INSTALL_DIR
-    "${CMAKE_INSTALL_PREFIX}/share/pkgconfig"
-    CACHE PATH "The directory relative to CMAKE_PREFIX_PATH where eigen3.pc is installed"
-    )
-configure_file(eigen3.pc.in eigen3.pc @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/eigen3.pc
-    DESTINATION ${PKGCONFIG_INSTALL_DIR}
-    )
-endif(NOT EIGEN_FOUND)
-
 
 ########################################################################
 # Setup doxygen option
@@ -184,9 +164,6 @@ add_custom_target(uninstall
 # Add subdirectories
 ########################################################################
 add_subdirectory(include/signal_exciter)
-if(NOT EIGEN_FOUND)
-add_subdirectory(include/eigen3/Eigen)
-endif(NOT EIGEN_FOUND)
 add_subdirectory(lib)
 add_subdirectory(swig)
 add_subdirectory(python)

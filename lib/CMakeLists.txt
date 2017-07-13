@@ -59,7 +59,6 @@ add_library(gnuradio-signal_exciter SHARED ${signal_exciter_sources})
 target_link_libraries(gnuradio-signal_exciter ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES}
 	  fftw3f)
 set_target_properties(gnuradio-signal_exciter PROPERTIES DEFINE_SYMBOL "gnuradio_signal_exciter_EXPORTS")
-add_definitions(-DEIGEN_DONT_PARALLELIZE)
 
 if(APPLE)
     set_target_properties(gnuradio-signal_exciter PROPERTIES

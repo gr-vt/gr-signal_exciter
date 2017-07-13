@@ -22,9 +22,6 @@
 #include <gnuradio/fft/window.h>
 #include <gnuradio/filter/firdes.h>
 
-//eigen stuff
-#include <eigen3/Eigen/Dense>
-
 
 typedef std::complex<float> complexf;
 typedef std::complex<double> complexd;
@@ -39,14 +36,6 @@ class Signal_Base
   private:
 //    static bool d_seeded;
 //    static int d_seed;
-
-    void convolve_2x_1( std::vector<float> &out,
-                        std::vector<float> &in2x,
-                        std::vector<float> &keep );
-
-    void convolve(std::vector<float> &out,
-                  std::vector<float> &a,
-                  std::vector<float> &b );
 
     void norm_f(std::vector<float> &to_norm, float scale=1.);
     void norm_d(std::vector<double> &to_norm, double scale=1.);
@@ -69,15 +58,8 @@ class Signal_Base
     gr::random *d_rng;
     size_t d_indicator;
 
-    bool d_enable_fractional;
-    double d_fso;
-
     virtual boost::mutex& fftw_lock() const {return *d_mutex_ptr;}
     //virtual boost::mutex& fso_lock() const {return s_mutex_fso;}
-
-    void prototype_augemnt_fractional_delay(
-          double interp, double interpd, std::vector<float> &proto,
-          double frac_delay, std::vector<float> &taps);
 
     void get_indicator(){
       boost::mutex::scoped_lock scoped(fftw_lock());
@@ -86,12 +68,6 @@ class Signal_Base
 
   public:
     virtual ~Signal_Base() = 0;
-
-    void enable_fractional_offsets(bool enable, double fso=0.)
-    {
-      d_enable_fractional = enable;
-      d_fso = fso;
-    }
     virtual void generate_signal(complexf* output, size_t sample_count) = 0;
     virtual void generate_symbols(complexf* output, size_t symbol_count) = 0;
 

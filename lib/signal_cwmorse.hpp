@@ -77,7 +77,7 @@ class Signal_CWMORSE : public Signal_Base
   public:
     Signal_CWMORSE(int d_char_per_word, float words_per_minute, bool base_word,
                     int seed, float* interp_taps=NULL, size_t tap_len=0,
-                    int interp=1, bool enable_fso = false, float fso=0., bool enable=true,
+                    int interp=1, bool enable=true,
                     size_t buff_size=8192, size_t min_notify=512);
     ~Signal_CWMORSE();
 

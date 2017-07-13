@@ -65,7 +65,7 @@ class Signal_PAM : public Signal_Base
 
   public:
     Signal_PAM(int order, float offset, int sps, float* pusle_shape, size_t length, int seed,
-                bool enable_fso = false, float fso=0., bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+                bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_PAM();
 
     void generate_signal(complexf* output, size_t sample_count);

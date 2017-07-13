@@ -7,7 +7,7 @@
 
 Signal_FSK::Signal_FSK(int order, int sps, float mod_idx, int seed,
                       float* augment_taps, size_t augment_length,
-                      bool enable_fso, float fso, bool enable,
+                      bool enable,
                       size_t buff_size, size_t min_notify)
   : d_order(order),
     d_sps(sps),
@@ -39,8 +39,6 @@ Signal_FSK::Signal_FSK(int order, int sps, float mod_idx, int seed,
   }
 
   //printf("FSK ORDER\n");
-
-  enable_fractional_offsets(enable_fso, fso);
 
   d_f = (d_h/float(d_sps))/2.;
 
@@ -230,14 +228,11 @@ void
 Signal_FSK::load_firs()
 {
   std::vector<float> dummy_taps(0);
-  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
 
   d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
-  std::vector<float> shifted_taps;
-  prototype_augemnt_fractional_delay(1., d_sps, d_proto_taps, d_fso, shifted_taps);
-  //std::vector<float> shifted_taps = d_proto_taps;
-  d_frac_filt->set_taps(shifted_taps);
-  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
+
+  d_frac_filt->set_taps(d_proto_taps);
+  d_frac_cache = std::vector<complexf>(d_proto_taps.size()-1);
 }
 
 void

@@ -11,7 +11,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
                          float mod_offset, int seed, bool add_sync,
                          float* symbol_taper, size_t sample_overlap,
                          float* interp_taps, size_t tap_len, int interp,
-                         bool enable_fso, float fso, bool enable, size_t buff_size,
+                         bool enable, size_t buff_size,
                          size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
@@ -46,16 +46,16 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
 
   float pulseshape[1] = {1.};
   if(mod_type == gr::signal_exciter::QAM){
-    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PSK){
-    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PAM){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::ASK){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_ASK(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else{
     throw_runtime("Unknown Base Modulation Type, choose ('PSK','QAM','PAM','ASK').\n");
@@ -74,8 +74,6 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
   d_backoff = pow(10.,d_backoff/10.);
   d_sym_counter = 0;
   items_written = 0;
-
-  enable_fractional_offsets(enable_fso,fso);
 
   if(tap_len){
     double power_check = 0.;
@@ -477,22 +475,14 @@ Signal_OFDM::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
   }
 
-  //std::cout << d_indicator << ": FSO: " << d_fso << "\n";
-
-  std::vector<float> shifted_taps;
-  prototype_augemnt_fractional_delay(d_interp, 1., d_interp_taps, d_fso, shifted_taps);
-
-  size_t leftover = (intp - (shifted_taps.size() % intp))%intp;
-  d_proto_taps = std::vector<float>(shifted_taps.size() + leftover, 0.);
-
-  memcpy( &d_proto_taps[0], &shifted_taps[0],
-          shifted_taps.size()*sizeof(float) );
+  size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
+  d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
+  memcpy( &d_proto_taps[0], &d_interp_taps[0],
+          d_interp_taps.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
     throw_runtime("signal_ofdm: error setting interp taps.\n");
   }
-
-  //std::vector<float> shifted_taps = d_proto_taps;
 
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);
