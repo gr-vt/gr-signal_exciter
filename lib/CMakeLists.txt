@@ -22,8 +22,8 @@
 ########################################################################
 include(GrPlatform) #define LIB_SUFFIX
 
-include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIRS})
+include_directories(${Boost_INCLUDE_DIR} ${FFTW3F_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS} ${FFTW3F_LIBRARY_DIRS})
 list(APPEND signal_exciter_sources
     gmm_impl.cc
     signal_base.cpp
@@ -55,9 +55,19 @@ if(NOT signal_exciter_sources)
 	return()
 endif(NOT signal_exciter_sources)
 
+list(APPEND sig_excite_libs
+    ${Boost_LIBRARIES}
+    ${GNURADIO_ALL_LIBRARIES}
+    ${VOLK_LIBRARIES}
+    ${FFTW3F_LIBRARIES}
+)
+if(FFTW3F_THREADS_LIBRARIES)
+    list(APPEND fft_libs ${FFTW3F_THREADS_LIBRARIES})
+    add_definitions("-DFFTW3F_THREADS")
+endif()
+
 add_library(gnuradio-signal_exciter SHARED ${signal_exciter_sources})
-target_link_libraries(gnuradio-signal_exciter ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES}
-	  fftw3f)
+target_link_libraries(gnuradio-signal_exciter ${sig_excite_libs})
 set_target_properties(gnuradio-signal_exciter PROPERTIES DEFINE_SYMBOL "gnuradio_signal_exciter_EXPORTS")
 
 if(APPLE)

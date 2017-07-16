@@ -102,6 +102,7 @@ endif(APPLE)
 ########################################################################
 # Find gnuradio build dependencies
 ########################################################################
+find_package(FFTW3f REQUIRED)
 find_package(CppUnit)
 find_package(Doxygen)
 
@@ -109,7 +110,7 @@ find_package(Doxygen)
 # components required to the list of GR_REQUIRED_COMPONENTS (in all
 # caps such as FILTER or FFT) and change the version to the minimum
 # API compatible version required.
-set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS FILTER DIGITAL ANALOG CHANNELS)
+set(GR_REQUIRED_COMPONENTS RUNTIME BLOCKS FILTER DIGITAL ANALOG CHANNELS FFT)
 find_package(Gnuradio "3.7.2" REQUIRED)
 
 if(NOT CPPUNIT_FOUND)
