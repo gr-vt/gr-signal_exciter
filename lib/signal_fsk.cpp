@@ -120,12 +120,11 @@ Signal_FSK::generate_signal(complexf* output, size_t sample_count)
   if(d_first_pass){
     d_symbol_cache = std::vector<complexf>(0);
     int needed = int(std::ceil(float(d_frac_cache.size())/float(d_sps)));
-    std::vector<complexf> temp(needed);
+    std::vector<complexf> temp(needed*d_sps);
     d_n = -needed*d_sps;
-    filter( needed, &temp[0] );
+    filter( temp.size(), &temp[0] );
     memcpy( &d_frac_cache[0], &temp[needed*d_sps-d_frac_cache.size()],
             d_frac_cache.size()*sizeof(complexf) );
-    d_n = 0;
     d_first_pass = false;
   }
 
@@ -179,6 +178,7 @@ Signal_FSK::filter( size_t nout, complexf* out )
     angle = (2.*M_PI*d_n)*(d_symbol_cache[0].real());
     gr::sincos(angle, &oq, &oi);
     out[oo] = complexf(oi,oq);
+    d_n++;
     oo++;
     d_samp_offset = (d_samp_offset+1)%d_sps;
   }
