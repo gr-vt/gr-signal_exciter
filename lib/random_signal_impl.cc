@@ -25,6 +25,7 @@
 #include <gnuradio/io_signature.h>
 #include "random_signal_impl.h"
 #include <gnuradio/filter/firdes.h>
+#include "pulseshapedes.h"
 #include <stdio.h>
 
 namespace gr {
@@ -188,17 +189,8 @@ namespace gr {
       else if(mod_type == GFSK){
         std::vector<float> gt = gr::filter::firdes::gaussian(1,d_params.sps,d_params.beta,d_params.L*d_params.sps);
         std::vector<float> rt(d_params.sps,1.);
-        std::vector<float> taps(gt.size()+rt.size()-1);
-        for(size_t idx = 0; idx < taps.size(); idx++){
-          size_t count = std::min(std::min(idx,rt.size()),gt.size());
-
-          float summer = 0.;
-          for(size_t dp = 0; dp < count; dp++){
-            if(idx-dp < gt.size())
-              summer += gt[idx-dp]*rt[dp];
-          }
-          taps[idx] = summer;
-        }
+        std::vector<float> taps;
+        conv(taps,gt,rt);
         if(d_params.pulse_len==0){
           d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,
                                 d_params.sps,d_params.L,d_params.mod_idx,
@@ -208,6 +200,24 @@ namespace gr {
           d_mod = new Signal_CPM(d_params.order,gr::analog::cpm::GENERIC,
                                 d_params.sps,d_params.L,d_params.mod_idx,
                                 seed,d_params.beta,&taps[0],taps.size(),
+                                &d_params.pulse_shape[0],d_params.pulse_len);
+        }
+      }
+      else if(mod_type == C4FM){
+        std::vector<float> rct;
+        pulseshapedes::rcos_pulse( rct, float(d_params.L), d_params.sps, .2f );
+        std::vector<float> rt(d_params.sps,1.);
+        std::vector<float> taps;
+        conv(taps,rct,rt);
+        if(d_params.pulse_len==0){
+          d_mod = new Signal_CPM(4,gr::analog::cpm::GENERIC,
+                                d_params.sps,d_params.L,d_params.mod_idx,
+                                seed,0.2,&taps[0],taps.size(),NULL,0);
+        }
+        else{
+          d_mod = new Signal_CPM(4,gr::analog::cpm::GENERIC,
+                                d_params.sps,d_params.L,d_params.mod_idx,
+                                seed,0.2,&taps[0],taps.size(),
                                 &d_params.pulse_shape[0],d_params.pulse_len);
         }
       }
@@ -383,17 +393,8 @@ namespace gr {
       else if(mod_type == GFSK){
         std::vector<float> gt = gr::filter::firdes::gaussian(1,d_parameters.get_sps(),d_parameters.get_beta(),d_parameters.get_L()*d_parameters.get_sps());
         std::vector<float> rt(d_parameters.get_sps(),1.);
-        std::vector<float> taps(gt.size()+rt.size()-1);
-        for(size_t idx = 0; idx < taps.size(); idx++){
-          size_t count = std::min(std::min(idx,rt.size()),gt.size());
-
-          float summer = 0.;
-          for(size_t dp = 0; dp < count; dp++){
-            if(idx-dp < gt.size())
-              summer += gt[idx-dp]*rt[dp];
-          }
-          taps[idx] = summer;
-        }
+        std::vector<float> taps;
+        conv(taps,gt,rt);
         if(d_parameters.get_pulse_len()==0){
           d_mod = new Signal_CPM(d_parameters.get_order(),gr::analog::cpm::GENERIC,
                                 d_parameters.get_sps(),d_parameters.get_L(),d_parameters.get_mod_idx(),
@@ -403,6 +404,24 @@ namespace gr {
           d_mod = new Signal_CPM(d_parameters.get_order(),gr::analog::cpm::GENERIC,
                                 d_parameters.get_sps(),d_parameters.get_L(),d_parameters.get_mod_idx(),
                                 seed,d_parameters.get_beta(),&taps[0],taps.size(),
+                                d_parameters.get_pulse_shape_ptr(),d_parameters.get_pulse_len());
+        }
+      }
+      else if(mod_type == C4FM){
+        std::vector<float> rct;
+        pulseshapedes::rcos_pulse( rct, float(d_parameters.get_L()), d_parameters.get_sps(), 0.2f );
+        std::vector<float> rt(d_parameters.get_sps(),1.);
+        std::vector<float> taps;
+        conv(taps,rct,rt);
+        if(d_parameters.get_pulse_len()==0){
+          d_mod = new Signal_CPM(4,gr::analog::cpm::GENERIC,
+                                d_parameters.get_sps(),d_parameters.get_L(),d_parameters.get_mod_idx(),
+                                seed,0.2,&taps[0],taps.size(),NULL,0);
+        }
+        else{
+          d_mod = new Signal_CPM(4,gr::analog::cpm::GENERIC,
+                                d_parameters.get_sps(),d_parameters.get_L(),d_parameters.get_mod_idx(),
+                                seed,0.2,&taps[0],taps.size(),
                                 d_parameters.get_pulse_shape_ptr(),d_parameters.get_pulse_len());
         }
       }

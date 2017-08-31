@@ -50,7 +50,8 @@ namespace gr {
       MSK     = 13,
       GFSK    = 14,
       ASK     = 15,
-      NCFSK   = 16
+      NCFSK   = 16,
+      C4FM    = 17
     };
 
     struct SIGNAL_EXCITER_API sig_params

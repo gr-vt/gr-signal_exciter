@@ -336,11 +336,17 @@ Signal_CPM::auto_gen_SYMS()
 {
   size_t buff_size(0), buff_pnt(0);
   std::vector<complexf> buffer(d_buffer_size,complexf(0.,0.));
+  //std::vector<int> dummy_buff(4,3);
+  //dummy_buff[2] = -3;
+  //dummy_buff[3] = -3;
+  //int dummy_idx = 0;
   while(d_running){
     for(size_t idx = 0; idx < d_buffer_size; idx++){
       //int data = rand()%d_order;
       int data = d_rng->ran_int();
       buffer[idx] = d_symbol_list[data];
+      //buffer[idx] = dummy_buff[dummy_idx++];
+      //dummy_idx = dummy_idx%4;
     }
 
     while((buff_pnt < buffer.size()) && d_running){
