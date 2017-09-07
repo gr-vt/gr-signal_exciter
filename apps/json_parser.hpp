@@ -595,7 +595,7 @@ namespace json
       d_Sig_Params.fc = signal.get("Center Frequency", 0.).asFloat();
       d_Sig_Params.fs = signal.get("Generation Sample Rate", 0.).asFloat();
       d_Sig_Params.gain = signal.get("Gain", 0.).asFloat();
-      Json::Value frac_check = signal.get("Fractional Symbol Offset", Json::Value());
+      /*BHC: TODO: Json::Value frac_check = signal.get("Fractional Symbol Offset", Json::Value());
       if(frac_check.isNull()){
         d_Sig_Params.frac_offset = false;
         d_Sig_Params.frac_symb_offset = 0.;
@@ -603,12 +603,11 @@ namespace json
       else{
         d_Sig_Params.frac_offset = true;
         d_Sig_Params.frac_symb_offset = signal.get("Fractional Symbol Offset", 0.).asFloat();
-      }
+      }*/
       d_load_check[0] = 1;
       std::cout << "General loaded\n" << d_Sig_Params.fc << std::endl
                 << d_Sig_Params.fs << std::endl
-                << d_Sig_Params.gain << std::endl
-                << d_Sig_Params.frac_symb_offset << std::endl;
+                << d_Sig_Params.gain << std::endl;
       std::string type = signal.get("Modulation Type", "").asString();
       std::transform( type.begin(), type.end(), type.begin(), ::tolower );
       if(strcmp(type.c_str(),"cwmorse")==0){
