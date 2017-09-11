@@ -6,6 +6,7 @@
 #include "signal_psk.hpp"
 #include "signal_qam.hpp"
 #include "signal_pam.hpp"
+#include "signal_ask.hpp"
 #include <fftw3.h>
 #include <gnuradio/filter/firdes.h>
 #include <gnuradio/filter/fir_filter.h>
@@ -85,8 +86,6 @@ class Signal_OFDM : public Signal_Base
     size_t d_hist;
     std::vector< complexf > d_past;
 
-    //fractional_symbol_offset
-    float d_fso;
     std::vector<float> d_proto_taps;
 
     //volk things
@@ -115,7 +114,7 @@ class Signal_OFDM : public Signal_Base
                 int mod_type, int mod_order, float mod_offset, int seed,
                 bool add_sync=false, float* symbol_taper=NULL,
                 size_t sample_overlap=0, float* interp_taps=NULL,
-                size_t tap_len=0, int interp=1, float fso=0.,
+                size_t tap_len=0, int interp=1,
                 bool enable=true, size_t buff_size=8192, size_t min_notify=512);
     ~Signal_OFDM();
 

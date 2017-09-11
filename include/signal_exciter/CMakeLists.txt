@@ -33,5 +33,6 @@ install(FILES
     random_gate.h
     one_pass_gate.h
     gmm.h
-    gmm_spectral_taps.h DESTINATION include/signal_exciter
+    gmm_spectral_taps.h
+    whiten_and_compress_block.h DESTINATION include/signal_exciter
 )

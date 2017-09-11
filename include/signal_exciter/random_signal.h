@@ -1,6 +1,6 @@
 /* -*- c++ -*- */
 /* 
- * Copyright 2015 <+YOU OR YOUR COMPANY+>.
+ * Copyright 2017 Bill Clark.
  * 
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,6 +51,7 @@ namespace gr {
        */
       //static sptr make(int seed=-1);
       static sptr make(sig_params sig, int seed=-1);
+      static sptr make(const signal_parameters &sig, int seed=-1);
     };
 
   } // namespace signal_exciter

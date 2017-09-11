@@ -2,7 +2,7 @@
 <block>
   <name>Periodic Gate</name>
   <key>signal_exciter_periodic_gate</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <make>signal_exciter.periodic_gate($samp_rate, $off_duration, $on_duration, $period_offset)</make>
 

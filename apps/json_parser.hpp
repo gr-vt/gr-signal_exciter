@@ -452,10 +452,35 @@ namespace json
                 << std::endl;
     }
 
+    void parse_ncfsk(Json::Value& signal){
+      d_Sig_Params.order = signal.get("Modulation Order", 2).asInt();
+      d_Sig_Params.sps = signal.get("Samples per Symbol", 2).asInt();
+      d_Sig_Params.mod_idx = signal.get("Modulation Index", 0.5).asFloat();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
+      d_load_check[1] = 1;
+    }
+
     void parse_fsk(Json::Value& signal){
       d_Sig_Params.order = signal.get("Modulation Order", 2).asInt();
       d_Sig_Params.sps = signal.get("Samples per Symbol", 2).asInt();
       d_Sig_Params.mod_idx = signal.get("Modulation Index", 0.5).asFloat();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
       d_load_check[1] = 1;
     }
 
@@ -489,6 +514,15 @@ namespace json
       d_Sig_Params.L = signal.get("Symbol Overlap", 1).asInt();
       d_Sig_Params.mod_idx = signal.get("Modulation Index", 0.5).asFloat();
       d_Sig_Params.beta = signal.get("Phase Shape Beta", 0.35).asFloat();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
       d_load_check[1] = 1;
     }
 
@@ -496,11 +530,29 @@ namespace json
       d_Sig_Params.sps = signal.get("Samples per Symbol", 2).asInt();
       d_Sig_Params.L = signal.get("Symbol Overlap", 1).asInt();
       d_Sig_Params.beta = signal.get("Phase Shape Beta", 0.35).asFloat();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
       d_load_check[1] = 1;
     }
 
     void parse_msk(Json::Value& signal){
       d_Sig_Params.sps = signal.get("Samples per Symbol", 2).asInt();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
       d_load_check[1] = 1;
     }
 
@@ -510,6 +562,15 @@ namespace json
       d_Sig_Params.L = signal.get("Symbol Overlap", 1).asInt();
       d_Sig_Params.mod_idx = signal.get("Modulation Index", 0.5).asFloat();
       d_Sig_Params.beta = signal.get("Phase Shape Beta", 0.35).asFloat();
+      d_Sig_Params.pulse_len = signal.get("Augment Taps", Json::Value(Json::arrayValue)).size();
+      d_Sig_Params.pulse_shape = std::vector<float>(d_Sig_Params.pulse_len,0.);
+      size_t idx = 0;
+      for(Json::Value::iterator it = signal["Augment Taps"].begin();
+          (it != signal["Augment Taps"].end()) &&
+          (idx < d_Sig_Params.pulse_len);
+          it++, idx++){
+        d_Sig_Params.pulse_shape[idx] = (*it).asFloat();
+      }
       d_load_check[1] = 1;
     }
 
@@ -534,12 +595,19 @@ namespace json
       d_Sig_Params.fc = signal.get("Center Frequency", 0.).asFloat();
       d_Sig_Params.fs = signal.get("Generation Sample Rate", 0.).asFloat();
       d_Sig_Params.gain = signal.get("Gain", 0.).asFloat();
-      d_Sig_Params.frac_symb_offset = signal.get("Fractional Symbol Offset", 0.).asFloat();
+      /*BHC: TODO: Json::Value frac_check = signal.get("Fractional Symbol Offset", Json::Value());
+      if(frac_check.isNull()){
+        d_Sig_Params.frac_offset = false;
+        d_Sig_Params.frac_symb_offset = 0.;
+      }
+      else{
+        d_Sig_Params.frac_offset = true;
+        d_Sig_Params.frac_symb_offset = signal.get("Fractional Symbol Offset", 0.).asFloat();
+      }*/
       d_load_check[0] = 1;
       std::cout << "General loaded\n" << d_Sig_Params.fc << std::endl
                 << d_Sig_Params.fs << std::endl
-                << d_Sig_Params.gain << std::endl
-                << d_Sig_Params.frac_symb_offset << std::endl;
+                << d_Sig_Params.gain << std::endl;
       std::string type = signal.get("Modulation Type", "").asString();
       std::transform( type.begin(), type.end(), type.begin(), ::tolower );
       if(strcmp(type.c_str(),"cwmorse")==0){
@@ -597,6 +665,11 @@ namespace json
         std::cout << "OFDM\n";
         d_Sig_Params.type = gr::signal_exciter::OFDM;
         parse_ofdm(signal);
+      }
+      else if(strcmp(type.c_str(), "ncfsk")==0){
+        std::cout << "NCFSK\n";
+        d_Sig_Params.type = gr::signal_exciter::NCFSK;
+        parse_fsk(signal);
       }
       else if(strcmp(type.c_str(), "fsk")==0){
         std::cout << "FSK\n";

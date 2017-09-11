@@ -2,7 +2,7 @@
 
 Website: https://github.com/gr-vt/gr-signal_exciter
 
-Last GNU Radio update: 5/1/17
+Last GNU Radio update: 5/15/17
 
 ## Installation
 
@@ -31,7 +31,9 @@ Dependencies are:
   3. boost
   4. libboost-random
   5. libjsoncpp
+  6. eigen3
   ```
+  The eigen3 headers are included from pulled source 'eigen-eigen-b9cd8366d4e8' (3.2.10 https://bitbucket.org/eigen/) and will be installed to $prefix/include/eigen3. See eigen_license/ for copied over license files.
   ```
   $ git clone https://github.com/gr-vt/gr-signal_exciter.git
   $ cd gr-signal_exciter

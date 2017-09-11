@@ -2,7 +2,7 @@
 <block>
   <name>Random Signal</name>
   <key>signal_exciter_random_signal</key>
-  <category>[Signal Exciter]</category>
+  <category>[SaikWolf]/Signal Exciter</category>
   <import>import signal_exciter</import>
   <import>from gnuradio.analog import cpm</import>
 	<make>None
@@ -30,7 +30,7 @@ for ii in range(#end raw $pulse_len#raw):#end raw
 sig_params.pulse_shape      = $psid
 
 #end if
-#if $mtype() in ('signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.C4FM', 'signal_exciter.CPM')
 sig_params.sps              = $sps
 #end if
 #if $mtype() in ('signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
@@ -40,6 +40,11 @@ sig_params.mod_idx          = $mod_idx
 #if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
 sig_params.L                = $overlap
 sig_params.beta             = $beta
+#end if
+#if $mtype() in ('signal_exciter.C4FM')
+sig_params.order            = $order
+sig_params.L                = $overlap
+sig_params.mod_idx          = 0.5/$sps
 #end if
 #if $mtype() in ('signal_exciter.CPM')
 sig_params.phase_type       = $ptype
@@ -134,9 +139,16 @@ sig_params.base_word        = bool($base_word)
 sig_params.char_per_word    = int($cpw)
 sig_params.words_per_minute = float($wpm)
 #end if
-sig_params.frac_symb_offset = $fso
+#if $mtype() in ('signal_exciter.NCFSK')
+sig_params.order            = $order
+sig_params.sps              = $sps
+sig_params.mod_idx          = $mod_idx
+#end if
+#if $mtype() in ('signal_exciter.MSK','signal_exciter.GMSK','signal_exciter.FSK','signal_exciter.GFSK','signal_exctier.C4FM','signal_exciter.CPM','signal_exciter.NCFSK')
+sig_params.pulse_len = 0
+#end if
 
-#set $sp_id = 'sig_params_%s_'%$id
+#set $sp_id = '_sig_params_%s'%$id
 $sp_id = sig_params
 self.$id = signal_exciter.random_signal($sp_id, $seed)
 </make>
@@ -213,8 +225,16 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
       <key>signal_exciter.GFSK</key>
     </option>
     <option>
+      <name>C4FM</name>
+      <key>signal_exciter.C4FM</key>
+    </option>
+    <option>
       <name>CPM</name>
       <key>signal_exciter.CPM</key>
+    </option>
+    <option>
+      <name>Non-Cont. FSK</name>
+      <key>signal_exciter.NCFSK</key>
     </option>
     <option>
       <name>OFDM</name>
@@ -256,7 +276,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>2</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM', 'signal_exciter.OFDM', 'signal_exciter.NCFSK')
   none
 #else
   all
@@ -282,7 +302,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>1</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.PSK', 'signal_exciter.QAM', 'signal_exciter.PAM', 'signal_exciter.ASK', 'signal_exciter.MSK', 'signal_exciter.GMSK', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.C4FM', 'signal_exciter.CPM', 'signal_exciter.NCFSK')
   none
 #else
   all
@@ -321,7 +341,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>0.75</value>
     <type>float</type>
     <hide>
-#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.DSB', 'signal_exciter.DSBSC', 'signal_exciter.FM', 'signal_exciter.USB', 'signal_exciter.LSB', 'signal_exciter.FSK', 'signal_exciter.GFSK', 'signal_exciter.CPM','signal_exciter.NCFSK')
   none
 #else
   all
@@ -592,7 +612,7 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
     <value>4</value>
     <type>int</type>
     <hide>
-#if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.CPM')
+#if $mtype() in ('signal_exciter.GMSK', 'signal_exciter.GFSK', 'signal_exciter.C4FM', 'signal_exciter.CPM')
   none
 #else
   all
@@ -709,13 +729,6 @@ sig_params.pilot_locations  = pilot_loc_($id)-->
   all
 #end if
     </hide>
-  </param>
-  <param>
-    <name>Fractional Symbol Offset</name>
-    <key>fso</key>
-    <value>0.</value>
-    <type>real</type>
-    <hide>part</hide>
   </param>
   <param>
     <name>Seed</name>

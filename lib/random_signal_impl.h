@@ -1,17 +1,17 @@
 /* -*- c++ -*- */
-/* 
- * Copyright 2015 <+YOU OR YOUR COMPANY+>.
- * 
+/*
+ * Copyright 2017 Bill Clark.
+ *
  * This is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 3, or (at your option)
  * any later version.
- * 
+ *
  * This software is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this software; see the file COPYING.  If not, write to
  * the Free Software Foundation, Inc., 51 Franklin Street,
@@ -22,6 +22,7 @@
 #define INCLUDED_SIGNAL_EXCITER_RANDOM_SIGNAL_IMPL_H
 
 #include <signal_exciter/random_signal.h>
+#include <gnuradio/fft/fft.h>//gain access to a shared fftw mutex
 #include <signal_exciter/signal_base.hpp>
 #include "signal_fm.hpp"
 #include "signal_dsb.hpp"
@@ -31,9 +32,11 @@
 #include "signal_psk.hpp"
 #include "signal_qam.hpp"
 #include "signal_pam.hpp"
+#include "signal_ask.hpp"
 #include "signal_ofdm.hpp"
 #include "signal_cwmorse.hpp"
 #include "signal_cpm.hpp"
+#include "signal_fsk.hpp"
 
 namespace gr {
   namespace signal_exciter {
@@ -42,12 +45,14 @@ namespace gr {
     {
      private:
       sig_params d_params;
+      signal_parameters d_parameters;
       Signal_Base* d_mod;
       bool roundone;
 
      public:
       //random_signal_impl(int seed=-1);
       random_signal_impl(sig_params sig, int seed=-1);
+      random_signal_impl(const signal_parameters &sig, int seed=-1);
       ~random_signal_impl();
 
       // Where all the action really happens
@@ -60,4 +65,3 @@ namespace gr {
 } // namespace gr
 
 #endif /* INCLUDED_SIGNAL_EXCITER_RANDOM_SIGNAL_IMPL_H */
-

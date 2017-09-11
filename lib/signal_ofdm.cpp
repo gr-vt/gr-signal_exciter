@@ -11,7 +11,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
                          float mod_offset, int seed, bool add_sync,
                          float* symbol_taper, size_t sample_overlap,
                          float* interp_taps, size_t tap_len, int interp,
-                         float fso, bool enable, size_t buff_size,
+                         bool enable, size_t buff_size,
                          size_t min_notify)
   : d_fftsize(fftsize),
     d_cp_len(cp_len),
@@ -32,7 +32,8 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
     d_frame_offset(0),
     d_samp_overlap(sample_overlap)
 {
-  boost::mutex::scoped_lock scoped_lock(fftw_lock());
+  get_indicator();
+  //boost::mutex::scoped_lock scoped_lock(fftw_lock());
 
   d_active_list = std::vector<size_t>(active_carriers,0);
   d_pilot_list = std::vector<size_t>(pilot_count,0);
@@ -45,26 +46,28 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
 
   float pulseshape[1] = {1.};
   if(mod_type == gr::signal_exciter::QAM){
-    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_QAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PSK){
-    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_PSK(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::PAM){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else if(mod_type == gr::signal_exciter::ASK){
-    d_mod = new Signal_PAM(mod_order,mod_offset,1,pulseshape,1,seed,0.,enable,buff_size,min_notify);
+    d_mod = new Signal_ASK(mod_order,mod_offset,1,pulseshape,1,seed,enable,buff_size,min_notify);
   }
   else{
     throw_runtime("Unknown Base Modulation Type, choose ('PSK','QAM','PAM','ASK').\n");
   }
 
+  (fftw_lock()).lock();
   d_fft_in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*d_fftsize);
   d_fft_out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*d_fftsize);
   memset( d_fft_in, 0, sizeof(fftwf_complex)*d_fftsize );
   memset( d_fft_out, 0, sizeof(fftwf_complex)*d_fftsize );
   d_fft = fftwf_plan_dft_1d(d_fftsize, d_fft_in, d_fft_out, FFTW_BACKWARD, FFTW_ESTIMATE);
+  (fftw_lock()).unlock();
 
   generate_pilots();
 
@@ -86,8 +89,9 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
   }
   else{
     d_interp = 1;
-    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+    tap_len = 23;
+    d_interp_taps = std::vector<float>(tap_len,0.);
+    d_interp_taps[(tap_len-1)/2] = 1.;
   }
   if(d_samp_overlap){
     d_taper = std::vector<float>(d_samp_overlap);
@@ -101,9 +105,6 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
 
   d_symbol_length = d_fftsize+d_cp_len;
 
-
-  d_fso = fso;
-
   d_align = volk_get_alignment();
 
   load_firs();
@@ -115,7 +116,7 @@ Signal_OFDM::Signal_OFDM(size_t fftsize, size_t cp_len, size_t active_carriers,
 
 Signal_OFDM::~Signal_OFDM()
 {
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  boost::mutex::scoped_lock scoped_lock(fftw_lock());
   d_running = false;
   fftwf_free(d_fft_in);
   fftwf_free(d_fft_out);
@@ -476,7 +477,6 @@ Signal_OFDM::load_firs()
 
   size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
   d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
-
   memcpy( &d_proto_taps[0], &d_interp_taps[0],
           d_interp_taps.size()*sizeof(float) );
 
@@ -484,20 +484,17 @@ Signal_OFDM::load_firs()
     throw_runtime("signal_ofdm: error setting interp taps.\n");
   }
 
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
-
   //std::vector< std::vector<float> > xtaps(intp);
   d_taps = std::vector< std::vector<float> >(intp);
 
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
   }
   //printf("OFDM:: taps init 0.\n");
 
-  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   //printf("OFDM:: taps filled.\n");
 

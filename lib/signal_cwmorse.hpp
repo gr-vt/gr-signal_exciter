@@ -56,7 +56,6 @@ class Signal_CWMORSE : public Signal_Base
 
     void auto_gen_SYMS();
 
-    float d_fso;
     std::vector<float> d_proto_taps;
 
     //volk things
@@ -78,7 +77,7 @@ class Signal_CWMORSE : public Signal_Base
   public:
     Signal_CWMORSE(int d_char_per_word, float words_per_minute, bool base_word,
                     int seed, float* interp_taps=NULL, size_t tap_len=0,
-                    int interp=1, float fso=0., bool enable=true,
+                    int interp=1, bool enable=true,
                     size_t buff_size=8192, size_t min_notify=512);
     ~Signal_CWMORSE();
 
@@ -90,7 +89,7 @@ class Signal_CWMORSE : public Signal_Base
     void set_seed(int seed)
     {
       d_seed = seed;
-      if(d_seed < 0) d_seed = d_rd();
+      if(d_seed < 0) d_seed = (*d_rd)();
     }
 
 };

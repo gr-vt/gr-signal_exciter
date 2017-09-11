@@ -7,7 +7,7 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
                       float* sigma, float* weight, float max_freq,
                       size_t tap_count, int seed, bool norm,
                       float* interp_taps, size_t tap_len, int interp,
-                      float fso, bool enable, size_t buff_size,
+                      bool enable, size_t buff_size,
                       size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
@@ -19,10 +19,15 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
     d_agc(),
     d_norm(norm)
 {
+  d_rd = new boost::random_device();
+  get_indicator();
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(fftw_lock());
-  d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
+  delete d_rd;
+  //boost::mutex::scoped_lock scoped_lock(fftw_lock());
+  (fftw_lock()).lock();
+  d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count,-1);
   generate_taps();
+  (fftw_lock()).unlock();
 
   d_rng = new gr::random(d_seed, 0, 1);
 
@@ -49,12 +54,9 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
   }
   else{
     d_interp = 1;
-    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+    tap_len = 1;
+    d_interp_taps = std::vector<float>(tap_len,1.);
   }
-
-
-  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -70,6 +72,7 @@ Signal_LSB::Signal_LSB(float mod_idx, size_t components, float* mu,
 
 Signal_LSB::~Signal_LSB()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;
@@ -117,12 +120,8 @@ Signal_LSB::generate_signal(complexf* output, size_t sample_count)
 {
   if(d_first_pass){
     d_past2 = std::vector<complexf>(d_hist2);
-    d_past = std::vector<float>(d_hist);
-    d_symbol_cache = std::vector<complexf>(d_hist);
-    generate_symbols( &d_symbol_cache[0], d_hist );
-    for(size_t idx = 0; idx < d_hist; idx++){
-      d_past[idx] = d_symbol_cache[idx].real();
-    }
+    d_past = std::vector<complexf>(d_hist);
+    generate_symbols( &d_past[0], d_hist );
   }
 
   filter( sample_count, output );
@@ -170,57 +169,14 @@ Signal_LSB::filter( size_t nout, complexf* out )
   }
 
   total_input_len = symbs_needed + d_past.size();
-  d_filt_in = (float*) volk_malloc( total_input_len*sizeof(float), d_align );
-  memcpy( &d_filt_in[0], &d_past[0], d_past.size()*sizeof(float) );
-  d_symbol_cache = std::vector<complexf>(symbs_needed);
-  generate_symbols( &d_symbol_cache[0], symbs_needed );
-  for(size_t idx = 0; idx < symbs_needed; idx++){
-    d_filt_in[d_past.size()+idx] = d_symbol_cache[idx].real();
-  }
+  d_filt_in = (complexf*) volk_malloc( total_input_len*sizeof(complexf), d_align );
+  memcpy( &d_filt_in[0], &d_past[0], d_past.size()*sizeof(complexf) );
+  generate_symbols( &d_filt_in[d_past.size()], symbs_needed );
 
   size_t oo(0), ii(0), oo2(0), ii2(0);
-  d_fm = std::vector<float>(symbs_needed,0.);
-  d_output_cache = std::vector<complexf>(symbs_needed,complexf(0.,0.));
 
   while( oo < symbs_needed ){
-    d_fm[oo++] = d_fir->filter( &d_filt_in[ii++] );
-  }
-
-  if(symbs_needed){
-    //boost::mutex::scoped_lock scoped_lock(fftw_lock());
-    d_fft_in = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*symbs_needed);
-    d_fft_out = (fftwf_complex*) fftwf_malloc(sizeof(fftwf_complex)*symbs_needed);
-    (fftw_lock()).lock();
-    d_fft = fftwf_plan_dft_r2c_1d( symbs_needed, &d_fm[0], d_fft_in, FFTW_ESTIMATE );
-    d_ifft = fftwf_plan_dft_1d( symbs_needed, d_fft_in, d_fft_out, FFTW_BACKWARD, FFTW_ESTIMATE );
-    (fftw_lock()).unlock();
-
-    do_fft(symbs_needed);
-    for(size_t idx = 1; idx < symbs_needed/2; idx++){
-      d_fft_in[idx][0] *= 2.;
-      d_fft_in[idx][1] *= 2.;
-    }
-    for(size_t idx = symbs_needed/2+1; idx < symbs_needed; idx++){
-      d_fft_in[idx][0] = 0.;
-      d_fft_in[idx][1] = 0.;
-    }
-    for(size_t idx = 1, lidx=symbs_needed-1; idx < symbs_needed/2; idx++, lidx--){
-      d_fft_in[lidx][0] = d_fft_in[idx][0];
-      d_fft_in[lidx][1] = d_fft_in[idx][1];
-      d_fft_in[idx][0] = 0.;
-      d_fft_in[idx][1] = 0.;
-    }
-    d_fft_in[0][0] = 0.; d_fft_in[0][1] = 0.;
-    do_ifft(symbs_needed);//output stored in d_output_cache
-
-    fftwf_free( d_fft_in );
-    fftwf_free( d_fft_out );
-    (fftw_lock()).lock();
-    fftwf_destroy_plan( d_fft );
-    fftwf_destroy_plan( d_ifft );
-    (fftw_lock()).unlock();
-
-    memcpy( &d_filt_in2[d_past2.size()], &d_output_cache[0], sizeof(complexf)*symbs_needed);
+    d_filt_in2[d_past2.size()+oo++] = d_fir->filter( &d_filt_in[ii++] );
   }
 
   while( oo2 < nout ){
@@ -238,7 +194,7 @@ Signal_LSB::filter( size_t nout, complexf* out )
     fprintf(stderr,"LSB: nout(%lu), til(%lu), ii(%lu), past(%lu)\n",nout,total_input_len,ii,d_past.size());
     fprintf(stderr,"LSB - There isn't enough left in the buffer!!! (%lu,%lu)\n",remaining,d_hist);
   }
-  d_past = std::vector<float>( &d_filt_in[ii], &d_filt_in[total_input_len] );
+  d_past = std::vector<complexf>( &d_filt_in[ii], &d_filt_in[total_input_len] );
   d_past2 = std::vector<complexf>( &d_filt_in2[ii2], &d_filt_in2[in2_len] );
 
   volk_free(d_filt_in);
@@ -261,7 +217,7 @@ Signal_LSB::generate_taps()
     d_taps[idx] = d_taps[idx]*d_window[idx];
   }
   d_hist = d_tap_count-1;
-  d_fir = new gr::filter::kernel::fir_filter_fff(1, d_taps);
+  d_fir = new gr::filter::kernel::fir_filter_ccc(1, d_taps);
 }
 
 void
@@ -279,39 +235,19 @@ Signal_LSB::load_firs()
   d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
   memcpy( &d_proto_taps[0], &d_interp_taps[0],
           d_interp_taps.size()*sizeof(float) );
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+
   d_xtaps = std::vector< std::vector<float> >(intp);
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_xtaps[idx].resize(ts);
   }
-  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_xtaps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_xtaps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   for(size_t idx = 0; idx < intp; idx++){
     d_firs[idx]->set_taps(d_xtaps[idx]);
   }
   d_hist2 = ts-1;
-}
-
-
-void
-Signal_LSB::do_fft(size_t samp_count)
-{
-  memset( &d_fft_in[0], 0, sizeof(fftwf_complex)*samp_count );
-  fftwf_execute( d_fft );
-}
-
-void
-Signal_LSB::do_ifft(size_t samp_count)
-{
-  memset( &d_fft_out[0], 0, sizeof(fftwf_complex)*samp_count );
-  fftwf_execute( d_ifft );
-  float scale = 1./float(samp_count);
-  for(size_t idx = 0; idx < samp_count; idx++){
-    d_output_cache[idx] = complexf(d_fft_out[idx][0]*scale,d_fft_out[idx][1]*scale);
-  }
 }
 
 void

@@ -6,7 +6,7 @@
 #include <algorithm>
 
 Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
-                        float fso, bool enable, size_t buff_size, size_t min_notify)
+                        bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
     d_sps(sps),
@@ -19,7 +19,10 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
     d_symbol_count(0)
 {
   //printf("Init.\n");
+  d_rd = new boost::random_device();
+  get_indicator();
   set_seed(seed);
+  delete d_rd;
   //printf("Seeded.\n");
 
   double power_check = 0.;
@@ -69,8 +72,6 @@ Signal_PAM::Signal_PAM(int order, float offset, int sps, float* pulse_shape, siz
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
 
-
-  d_fso = fso;
 
   d_align = volk_get_alignment();
 
@@ -444,7 +445,6 @@ Signal_PAM::load_firs()
 
   size_t leftover = (intp - (d_pulse_shape.size() % intp))%intp;
   d_proto_taps = std::vector<float>(d_pulse_shape.size() + leftover, 0.);
-
   memcpy( &d_proto_taps[0], &d_pulse_shape[0],
           d_pulse_shape.size()*sizeof(float) );
 
@@ -452,19 +452,16 @@ Signal_PAM::load_firs()
     throw_runtime("signal_pam: error setting pulse shaping taps.\n");
   }
 
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
-
   d_taps = std::vector< std::vector<float> >(intp);
 
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
   }
   //printf("PAM:: taps init 0.\n");
 
-  for(size_t idx = 0; idx < d_pulse_shape.size(); idx++){
-    d_taps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_taps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   //printf("PAM:: taps filled.\n");
 

@@ -8,7 +8,9 @@
 Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
                       int sps, int overlap, float mod_idx, int seed,
                       double beta, float* phase_shape,
-                      size_t phase_shape_length, float fso, bool enable,
+                      size_t phase_shape_length,
+                      float* augment_taps, size_t augment_length,
+                      bool enable,
                       size_t buff_size, size_t min_notify)
   : d_order(order),
     d_sps(sps),
@@ -22,8 +24,10 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
     d_notify_size(min_notify)
 {
   //printf("CPM INIT\n");
-
+  d_rd = new boost::random_device();
+  get_indicator();
   set_seed(seed);
+  delete d_rd;
 
   d_first_pass = true;
 
@@ -40,6 +44,22 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   }
 
   //printf("CPM ORDER\n");
+
+  if(augment_length==0){
+    d_proto_taps = std::vector<float>(0);
+  }
+  else{
+    d_proto_taps = std::vector<float>(augment_length);
+    double pwr_chk = 0.;
+    for(size_t idx = 0; idx < augment_length; idx++){
+      d_proto_taps[idx] = augment_taps[idx];
+      pwr_chk = augment_taps[idx]*augment_taps[idx];
+    }
+    pwr_chk = 1./std::sqrt(pwr_chk);
+    for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+      d_proto_taps[idx] *= pwr_chk;
+    }
+  }
 
   create_symbol_list();
 
@@ -74,9 +94,6 @@ Signal_CPM::Signal_CPM(int order, gr::analog::cpm::cpm_type phase_type,
   }
 
   //printf("CPM PHASE SHAPE\n");
-
-
-  d_fso = fso;
 
   d_align = volk_get_alignment();
 
@@ -174,8 +191,11 @@ Signal_CPM::create_symbol_list()
     d_symbol_list[idx] = complexf(d_symbol_amps[idx],0.);
   }
 
-  d_proto_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                        gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+  if(d_proto_taps.size()==0){
+    size_t tap_len = (d_sps%2) ? 11*d_sps : 11*d_sps+1;
+    d_proto_taps = std::vector<float>(tap_len,0.);
+    d_proto_taps[(tap_len-1)/2] = 1.;
+  }
 }
 
 void
@@ -237,7 +257,7 @@ Signal_CPM::filter( size_t nout, complexf* out )
     //pulled from gr::analog::fm
     d_phase_acm += d_filt_out[oo] * M_PI * d_h;
     //d_phase_acm = std::fmod( d_phase_acm + M_PI, M_2_PIl ) - M_PI;
-    gr::sincos(d_phase_acm, &oi, &oq);
+    gr::sincos(d_phase_acm, &oq, &oi);
     out[oo] = complexf(oi,oq);
 
 
@@ -306,12 +326,9 @@ Signal_CPM::load_firs()
   }
   d_hist = ts-1;
 
-
   d_frac_filt = new gr::filter::kernel::fir_filter_ccf(1, dummy_taps);
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_sps*d_fso);
-  d_frac_filt->set_taps(shifted_taps);
-  d_frac_cache = std::vector<complexf>(shifted_taps.size()-1);
+  d_frac_filt->set_taps(d_proto_taps);
+  d_frac_cache = std::vector<complexf>(d_proto_taps.size()-1);
 }
 
 void
@@ -319,11 +336,17 @@ Signal_CPM::auto_gen_SYMS()
 {
   size_t buff_size(0), buff_pnt(0);
   std::vector<complexf> buffer(d_buffer_size,complexf(0.,0.));
+  //std::vector<int> dummy_buff(4,3);
+  //dummy_buff[2] = -3;
+  //dummy_buff[3] = -3;
+  //int dummy_idx = 0;
   while(d_running){
     for(size_t idx = 0; idx < d_buffer_size; idx++){
       //int data = rand()%d_order;
       int data = d_rng->ran_int();
       buffer[idx] = d_symbol_list[data];
+      //buffer[idx] = dummy_buff[dummy_idx++];
+      //dummy_idx = dummy_idx%4;
     }
 
     while((buff_pnt < buffer.size()) && d_running){

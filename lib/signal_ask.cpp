@@ -1,11 +1,11 @@
 
 
-#include "signal_qam.hpp"
+#include "signal_ask.hpp"
 #include <stdio.h>//////////////////////////////////
 #include <stdexcept>
 #include <algorithm>
 
-Signal_QAM::Signal_QAM(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
+Signal_ASK::Signal_ASK(int order, float offset, int sps, float* pulse_shape, size_t length, int seed,
                         bool enable, size_t buff_size, size_t min_notify)
   : d_order(order),
     d_offset(offset),
@@ -68,7 +68,6 @@ Signal_QAM::Signal_QAM(int order, float offset, int sps, float* pulse_shape, siz
 
   d_rng = new gr::random(d_seed, 0, d_order);
 
-
   if(d_sps > d_pulse_shape.size()){
     printf("The pulse_shape is shorter than sps, this will crash.\n");
   }
@@ -77,18 +76,17 @@ Signal_QAM::Signal_QAM(int order, float offset, int sps, float* pulse_shape, siz
   d_align = volk_get_alignment();
 
   load_firs();
-  //printf("QAM::Loaded FIR filters.\n");
-
+    //printf("ASK::Loaded FIR filters.\n");
 
   if(d_enable){
     d_running = true;
     auto_fill_symbols();
     auto_fill_signal();
   }
-  //printf("QAM::Fully made\n");
+  //printf("ASK::Fully made\n");
 }
 
-Signal_QAM::~Signal_QAM()
+Signal_ASK::~Signal_ASK()
 {
   if(d_enable){
     d_running = false;/*
@@ -103,29 +101,15 @@ Signal_QAM::~Signal_QAM()
     delete d_firs[idx];
   }
   delete d_rng;
-
 }
 
 void
-Signal_QAM::generate_symbols(complexf* output, size_t symbol_count)
+Signal_ASK::generate_symbols(complexf* output, size_t symbol_count)
 {
   if(d_enable){
     size_t filled(0);
     while((filled < symbol_count) && d_running){
       filled += d_Sy->bmemcpy( &output[filled], symbol_count-filled, false );
-    }
-    // All requested symbols have been made
-
-    size_t zeros(0),infs(0),nans(0);
-    for(size_t idx = 0; idx<symbol_count; idx++){
-      if(std::isnan(output[idx].real())||std::isnan(output[idx].imag()))                        nans++;
-      if(std::isinf(output[idx].real())||std::isinf(output[idx].imag()))                        infs++;
-      if((output[idx].real()*output[idx].real() + output[idx].imag()*output[idx].imag()) == 0.) zeros++;
-    }
-    if(zeros | infs | nans){
-      printf("Fault found in generate_symbols call #%lu.\n",d_symb_gen_count);
-      printf("Consumer requested %lu symbols, generated %lu samples.\n",symbol_count,filled);
-      printf("Within generated samples found: %lu zeros, %lu NANs, %lu Infs.\n",zeros,infs,nans);
     }
   }
   else{
@@ -138,7 +122,7 @@ Signal_QAM::generate_symbols(complexf* output, size_t symbol_count)
 }
 
 void
-Signal_QAM::generate_signal(complexf* output, size_t sample_count)
+Signal_ASK::generate_signal(complexf* output, size_t sample_count)
 {
   size_t oo = 0;
   size_t interp = size_t(d_sps);
@@ -181,38 +165,23 @@ Signal_QAM::generate_signal(complexf* output, size_t sample_count)
 
 
 void
-Signal_QAM::create_symbol_list(int k)
+Signal_ASK::create_symbol_list(int k)
 {
   //printf("Creating the symbol list\n");
-  float spillage = float(k)/2.0;
-  int r(floor(spillage)),i(floor(spillage));
-  if(floor(spillage) < spillage){
-    r++;
-  }
-  int R(1),I(1);
-  for(int idx = 0; idx < i; idx++){
+  int R(1);
+  for(int idx = 0; idx < k; idx++){
     R = R*2;
-    I = I*2;
   }
-  if(r>i) R = R*2;
 
   std::vector<float> reals(R,0.);
-  std::vector<float> imags(I,0.);
 
   for(int idx = 0; idx < R; idx++){
-    reals[idx] = idx*2-R+1;
-  }
-  if(I > 1){
-    for(int idx = 0; idx < I; idx++){
-      imags[idx] = idx*2-I+1;
-    }
+    reals[idx] = idx;
   }
 
   d_symbol_list = std::vector<complexf>(d_order,complexf(0.,0.));
   for(int data = 0; data < d_order; data++){
-    r = data / I;
-    i = data % I;
-    d_symbol_list[data] = complexf(reals[r],imags[i]);
+    d_symbol_list[data] = complexf(reals[data],0.);
   }
 
   float power_check = 0.;
@@ -256,7 +225,7 @@ Signal_QAM::create_symbol_list(int k)
 
 
 void
-Signal_QAM::filter( size_t nout, complexf* out )
+Signal_ASK::filter( size_t nout, complexf* out )
 {
 /*  size_t oo(0),ii(0),cached(0),interp(d_sps),sidx(0);
   float fractional(0);
@@ -448,24 +417,25 @@ Signal_QAM::filter( size_t nout, complexf* out )
 
 
 
+
 void
-Signal_QAM::auto_fill_symbols()
+Signal_ASK::auto_fill_symbols()
 {
   d_Sy = new signal_threaded_buffer<complexf>(d_buffer_size,d_notify_size);
-  d_TGroup.create_thread( boost::bind(&Signal_QAM::auto_gen_SYMS, this) );
+  d_TGroup.create_thread( boost::bind(&Signal_ASK::auto_gen_SYMS, this) );
 }
 
 void
-Signal_QAM::auto_fill_signal()
+Signal_ASK::auto_fill_signal()
 {}
 
 
 void
-Signal_QAM::load_firs()
+Signal_ASK::load_firs()
 {
-  //printf("QAM::Attempting to load filters.\n");
+  //printf("ASK::Attempting to load filters.\n");
   size_t intp = d_sps;
-  //printf("QAM:: Intp(%lu), ts(%lu), sps(%d), d_overlap(%lu).\n",intp,ts,d_sps,d_overlap);
+  //printf("ASK:: Intp(%lu), ts(%lu), sps(%d), d_overlap(%lu).\n",intp,ts,d_sps,d_overlap);
 
   d_firs = std::vector< gr::filter::kernel::fir_filter_ccf *>(intp);
   std::vector<float> dummy_taps;
@@ -479,8 +449,10 @@ Signal_QAM::load_firs()
           d_pulse_shape.size()*sizeof(float) );
 
   if( d_proto_taps.size() % intp ){
-    throw_runtime("signal_qam: error setting pulse shaping taps.\n");
+    throw_runtime("signal_ask: error setting pulse shaping taps.\n");
   }
+
+  //std::vector<float> shifted_taps = d_proto_taps;
 
   d_taps = std::vector< std::vector<float> >(intp);
 
@@ -488,24 +460,24 @@ Signal_QAM::load_firs()
   for(size_t idx = 0; idx < intp; idx++){
     d_taps[idx].resize(ts);
   }
-  //printf("QAM:: taps init 0.\n");
+  //printf("ASK:: taps init 0.\n");
 
   for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
     d_taps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
-  //printf("QAM:: taps filled.\n");
+  //printf("ASK:: taps filled.\n");
 
-  //printf("QAM:: filters made.\n");
+  //printf("ASK:: filters made.\n");
   for(size_t idx = 0; idx < intp; idx++){
     d_firs[idx]->set_taps(d_taps[idx]);
   }
-  //printf("QAM:: taps loaded.\n");
+  //printf("ASK:: taps loaded.\n");
   d_hist = ts-1;
 }
 
 
 void
-Signal_QAM::auto_gen_SYMS()
+Signal_ASK::auto_gen_SYMS()
 {
   size_t buff_size(0), buff_pnt(0);
   std::vector<complexf> buffer(d_buffer_size,complexf(0.,0.));
@@ -514,10 +486,6 @@ Signal_QAM::auto_gen_SYMS()
       //int data = rand()%d_order;
       int data = d_rng->ran_int();
       buffer[idx] = d_symbol_list[data];
-      /*d_symbol_count++;
-      if(buffer[idx].real()*buffer[idx].real()+buffer[idx].imag()*buffer[idx].imag() > 20.){
-        printf("Auto_gen: Problem @ symbol %lu\n",d_symbol_count);
-      }*/
     }
 
     while((buff_pnt < buffer.size()) && d_running){
@@ -528,10 +496,10 @@ Signal_QAM::auto_gen_SYMS()
 }
 
 void
-Signal_QAM::throw_runtime(std::string err, size_t sc, size_t os, size_t si)
+Signal_ASK::throw_runtime(std::string err, size_t sc, size_t os, size_t si)
 {
   //printf("Error occured while trying to make %lu samples, on sample %lu, symbol_idx %lu\n",sc,os, si);
-  //printf("Error occured (QAM): A= %lu, B= %lu, C= %lu\n",sc,os, si);
+  //printf("Error occured (ASK): A= %lu, B= %lu, C= %lu\n",sc,os, si);
   d_running = false;
   d_TGroup.join_all();
   delete d_Sy;

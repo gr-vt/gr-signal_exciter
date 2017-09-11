@@ -6,7 +6,7 @@
 Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
                     float* weight, float max_freq, size_t tap_count, int seed,
                     float* interp_taps, size_t tap_len, int interp,
-                    float fso, bool enable, size_t buff_size, size_t min_notify)
+                    bool enable, size_t buff_size, size_t min_notify)
   : d_mod_idx(mod_idx),
     d_tap_count(tap_count),
     d_cum(0.),
@@ -16,10 +16,15 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
     d_buffer_size(buff_size),
     d_notify_size(min_notify)
 {
+  d_rd = new boost::random_device();
+  get_indicator();
   set_seed(seed);
-  boost::mutex::scoped_lock scoped_lock(s_mutex_fftw);
+  delete d_rd;
+  //boost::mutex::scoped_lock scoped_lock(fftw_lock());
+  (fftw_lock()).lock();
   d_gmm_tap_gen.set_params(components, mu, sigma, weight, 2.*max_freq, tap_count);
   generate_taps();
+  (fftw_lock()).unlock();
 
   d_rng = new gr::random(d_seed, 0, 1);
 
@@ -44,12 +49,9 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
   }
   else{
     d_interp = 1;
-    d_interp_taps = gr::filter::firdes::low_pass_2(1,1,0.5,0.05,61,
-                          gr::filter::firdes::WIN_BLACKMAN_hARRIS);
+    tap_len = 1;
+    d_interp_taps = std::vector<float>(tap_len,1.);
   }
-
-
-  d_fso = fso;
 
   d_align = volk_get_alignment();
   // Generate and load the GNURadio FIR Filters with the pulse shape.
@@ -59,6 +61,7 @@ Signal_FM::Signal_FM(float mod_idx, size_t components, float* mu, float* sigma,
 
 Signal_FM::~Signal_FM()
 {
+  delete d_rng;
   delete d_fir;
   if(d_enable){
     d_running = false;
@@ -167,7 +170,7 @@ Signal_FM::filter( size_t nout, complexf* out )
 
   size_t oo(d_past2.size()), ii(0), oo2(0), ii2(0);
   size_t inc1(symbs_needed+d_past2.size());
-  float mod = M_2_PI*d_mod_idx;
+  float mod = LM_2PI*d_mod_idx;
 
   while( oo < inc1 ){
     d_cum += d_fir->filter( &d_filt_in[ii++] );
@@ -196,7 +199,7 @@ Signal_FM::filter( size_t nout, complexf* out )
 /*************************************************************************************
   d_symbol_cache = std::vector<complexf>(sample_count, complexf(0.,0.));
   generate_symbols( &d_symbol_cache[0], sample_count );
-  double mod = M_2_PIl*(d_mod_idx*d_fmax);
+  double mod = LM_2PI*(d_mod_idx*d_fmax);
   for(size_t idx = 0; idx < sample_count; idx++){
     d_cum += d_symbol_cache[idx].real();
     output[idx] = exp(complexf(0.,mod*d_cum));
@@ -234,19 +237,19 @@ Signal_FM::load_firs()
     d_firs[idx] = new gr::filter::kernel::fir_filter_ccf(1,dummy_taps);
   }
 
+
   size_t leftover = (intp - (d_interp_taps.size() % intp))%intp;
   d_proto_taps = std::vector<float>(d_interp_taps.size() + leftover, 0.);
   memcpy( &d_proto_taps[0], &d_interp_taps[0],
           d_interp_taps.size()*sizeof(float) );
-  std::vector<float> shifted_taps;
-  time_offset(shifted_taps, d_proto_taps, d_interp*d_fso);
+
   d_xtaps = std::vector< std::vector<float> >(intp);
-  size_t ts = shifted_taps.size() / intp;
+  size_t ts = d_proto_taps.size() / intp;
   for(size_t idx = 0; idx < intp; idx++){
     d_xtaps[idx].resize(ts);
   }
-  for(size_t idx = 0; idx < d_interp_taps.size(); idx++){
-    d_xtaps[idx % intp][idx / intp] = shifted_taps[idx];
+  for(size_t idx = 0; idx < d_proto_taps.size(); idx++){
+    d_xtaps[idx % intp][idx / intp] = d_proto_taps[idx];
   }
   for(size_t idx = 0; idx < intp; idx++){
     d_firs[idx]->set_taps(d_xtaps[idx]);

@@ -1,5 +1,5 @@
-#ifndef INCLUDED_SIGNAL_PSK_HPP
-#define INCLUDED_SIGNAL_PSK_HPP
+#ifndef INCLUDED_SIGNAL_ASK_HPP
+#define INCLUDED_SIGNAL_ASK_HPP
 
 
 #include <signal_exciter/signal_base.hpp>
@@ -7,7 +7,7 @@
 #include <volk/volk.h>
 
 
-class Signal_PSK : public Signal_Base
+class Signal_ASK : public Signal_Base
 {
   private:
     int d_seed;
@@ -24,12 +24,12 @@ class Signal_PSK : public Signal_Base
 
     std::vector<complexf> d_symbol_cache;
 
-    size_t d_samp_offset;
+    int d_samp_offset;
     //std::vector< int > d_data_cache;
     std::vector<complexf> d_output_cache;
     size_t d_protected;
 
-    void create_symbol_list();
+    void create_symbol_list(int k);
 
     size_t d_enable;
     size_t d_buffer_size;
@@ -64,10 +64,9 @@ class Signal_PSK : public Signal_Base
     void filter( size_t nout, complexf* out);
 
   public:
-    Signal_PSK(int order, float offset, int sps, float* pusle_shape,
-                size_t length, int seed, bool enable=true,
-                size_t buff_size=8192, size_t min_notify=512);
-    ~Signal_PSK();
+    Signal_ASK(int order, float offset, int sps, float* pusle_shape, size_t length, int seed,
+                bool enable=true, size_t buff_size=8192, size_t min_notify=512);
+    ~Signal_ASK();
 
     void generate_signal(complexf* output, size_t sample_count);
     void generate_symbols(complexf* output, size_t symbol_count);
@@ -82,4 +81,4 @@ class Signal_PSK : public Signal_Base
 
 };
 
-#endif /* INCLUDED_SIGNAL_PSK_HPP */
+#endif /* INCLUDED_SIGNAL_ASK_HPP */
