@@ -749,7 +749,7 @@ std::vector<float> gen_synthz_taps(int channels, float samp_rate)
   }
   else if(TAP_SWITCH==1){
     float num_channels(channels);
-    taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.55,0.005,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+    taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.50,0.05,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
   }
 
   return taps;
@@ -782,32 +782,32 @@ std::vector<float> gen_channl_taps(int channels, float samp_rate)
     switch(channels){
       case 2:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1000,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
       case 4:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1000,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
       case 8:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1000,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
       case 16:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1000,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
       case 32:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1001,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
       case 64:
       {
-        taps = gr::filter::firdes::low_pass_2(num_channels/2.,num_channels,0.5,0.232,100, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
+        taps = gr::filter::firdes::low_pass_2(sqrt(num_channels/float(SYNTH_SIZE)),num_channels,0.5,0.1001,120, gr::filter::firdes::WIN_BLACKMAN_HARRIS);
         break;
       }
     }
