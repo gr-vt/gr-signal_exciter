@@ -42,7 +42,7 @@ namespace gr {
      * The private constructor
      */
     one_pass_gate_impl::one_pass_gate_impl(float samp_rate, float off_duration, float on_duration, bool consume)
-      : gr::sync_block("one_pass_gate",
+      : gr::block("one_pass_gate",
               gr::io_signature::make(1, 1, sizeof(gr_complex)),
               gr::io_signature::make(1, 1, sizeof(gr_complex))),
         d_samp_rate(samp_rate),
@@ -73,7 +73,8 @@ namespace gr {
     }
 
     int
-    one_pass_gate_impl::work(int noutput_items,
+    one_pass_gate_impl::general_work(int noutput_items,
+        gr_vector_int& ninput_items,
         gr_vector_const_void_star &input_items,
         gr_vector_void_star &output_items)
     {

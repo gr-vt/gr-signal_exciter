@@ -90,17 +90,17 @@ namespace gr {
 
       memset( &out[0], 0, noutput_items*sizeof(gr_complex) );
 
-      size_t oo(0),min_cpy(0);
+      int oo(0),min_cpy(0);
 
       while(oo < noutput_items){
         if(d_cycle_counter < d_off_count){
-          min_cpy = ((noutput_items-oo) < (d_off_count-d_off_counter)) ? (noutput_items-oo) : (d_off_count-d_off_counter);
+          min_cpy = ((noutput_items-oo) < (int(d_off_count)-int(d_off_counter))) ? (noutput_items-oo) : (int(d_off_count)-int(d_off_counter));
           oo += min_cpy;
           d_off_counter += min_cpy;
           d_cycle_counter += min_cpy;
         }
         else if(d_cycle_counter < d_cycle_count){
-          min_cpy = ((noutput_items-oo) < (d_on_count-d_on_counter)) ? (noutput_items-oo) : (d_on_count-d_on_counter);
+          min_cpy = ((noutput_items-oo) < (int(d_on_count)-int(d_on_counter))) ? (noutput_items-oo) : (int(d_on_count)-int(d_on_counter));
           memcpy( &out[oo], &in[oo], min_cpy*sizeof(gr_complex) );
           oo += min_cpy;
           d_on_counter += min_cpy;
@@ -118,11 +118,7 @@ namespace gr {
           //printf("Next settings: OFF(%lu) ON(%lu)\n",d_off_count, d_on_count);
         }
       }
-
-
-      // Tell runtime system how many input items we consumed on
-      // each input stream.
-      consume_each (noutput_items);
+      //printf("Noutput_items(%d), oo(%d)\n",noutput_items,oo);
 
       // Tell runtime system how many output items we produced.
       return noutput_items;

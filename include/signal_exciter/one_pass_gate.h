@@ -33,7 +33,7 @@ namespace gr {
      * \ingroup signal_exciter
      *
      */
-    class SIGNAL_EXCITER_API one_pass_gate : virtual public gr::sync_block
+    class SIGNAL_EXCITER_API one_pass_gate : virtual public gr::block
     {
      public:
       typedef boost::shared_ptr<one_pass_gate> sptr;
